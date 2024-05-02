@@ -1,20 +1,23 @@
-import { PublicKey, SystemProgram, clusterApiUrl } from '@solana/web3.js';
+import {ComputeBudgetProgram} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, BN, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
 import * as os from "node:os";
-import type { Idl } from "@coral-xyz/anchor/dist/cjs/idl";
-import * as token from '@solana/spl-token'
 import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import { SolXen } from '../target/types/sol_xen';
-
-type CustomIDL = Idl | any;
 
 async function main() {
 // Set this to your local cluster or mainnet-beta, testnet, devnet
   const network = 'http://127.0.0.1:8899';
-  // console.log(clusterApiUrl('devnet'))
   const connection = new web3.Connection(network, 'processed');
+
+  const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 1_200_000
+  });
+
+  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+    microLamports: 1
+  });
 
   const keyPairFileName = '.config/solana/id.json'
   const keyPairString = fs.readFileSync(path.resolve(os.homedir(), keyPairFileName), 'utf-8');
@@ -22,7 +25,6 @@ async function main() {
   console.log('Using wallet', keyPair.publicKey.toBase58());
 
   // Update this to the ID of your deployed program
-  // const programId = new PublicKey('Acq6T4HruCRnZXVHqUiZ4CVJnnbqcSv233r5QmQiFUCi');
   const wallet = new Wallet(keyPair);
   // Create and set the provider
   const provider = new AnchorProvider(
@@ -31,25 +33,17 @@ async function main() {
     // AnchorProvider.defaultOptions(),
   );
   setProvider(provider);
-  // console.log('Using wallet', wallet)
-  // console.log('Using provider', provider)
 
   // check balance
   console.log('Block height:', await connection.getBlockHeight());
   console.log('Balance:', await connection.getBalance(keyPair.publicKey));
 
   // Load the program
-  console.log(process.cwd())
-  const idlString = fs.readFileSync(path.resolve(".", "target/idl/sol_xen.json"), "utf8");
-  const idl: Idl = JSON.parse(idlString);
-  // const idl = await anchor.Program.fetchIdl(programId, provider);
-  // console.log('Using IDL', idl)
-
   const program = workspace.SolXen as Program<SolXen>;
-  console.log(program.methods);
 
   // Create an account to store the block number
   const blockNumberAccount = web3.Keypair.generate();
+  const user = web3.Keypair.generate()
 
   const tx1 = new web3.Transaction().add(
     web3.SystemProgram.transfer({
@@ -60,28 +54,28 @@ async function main() {
   );
   // Sign transaction, broadcast, and confirm
   const sig1 = await web3.sendAndConfirmTransaction(connection, tx1, [keyPair]);
-  console.log('Transaction1', sig1);
+  console.log('Tx1 hash', sig1);
+  const tx2 = new web3.Transaction().add(
+    web3.SystemProgram.transfer({
+      fromPubkey: keyPair.publicKey,
+      toPubkey: user.publicKey,
+      lamports: web3.LAMPORTS_PER_SOL,
+    })
+  );
+  // Sign transaction, broadcast, and confirm
+  const sig2 = await web3.sendAndConfirmTransaction(connection, tx2, [keyPair]);
+  console.log('Tx2 hash', sig2);
   console.log('Balance1:', await connection.getBalance(keyPair.publicKey));
   console.log('Balance2:', await connection.getBalance(blockNumberAccount.publicKey));
 
-  const mintToken = web3.Keypair.generate()
-
-  // const ta = web3.PublicKey.findProgramAddressSync(
-  //  [provider.publicKey.toBuffer(),TOKEN_PROGRAM_ID.toBuffer(),mintToken.publicKey.toBuffer()],
-  //  associateTokenProgram
-  // )[0]
-  // let tokenAccountKeyPair = web3.Keypair.generate()
-
   const createAccounts = {
     admin: provider.wallet.publicKey,
-    // mintToken: mintToken.publicKey,
-    // tokenAccount: tokenAccount,
     tokenProgram: TOKEN_PROGRAM_ID,
   };
 
   // Send the mint transaction
   const hash = await program.methods.createMint().accounts(createAccounts).signers([]).rpc();
-  console.log(hash)
+  console.log('Create Mint tx hash', hash)
 
   const [mint] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from("mint")],
@@ -89,29 +83,81 @@ async function main() {
   );
 
   const mintAccount = await getMint(provider.connection, mint);
-  console.log(mintAccount)
+  // console.log(mintAccount)
 
   const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
-  const tokenAccount = utils.token.associatedAddress({mint:mintAccount.address,owner:provider.publicKey})
+  const userTokenAccount = utils.token.associatedAddress({
+      mint: mintAccount.address,
+      owner: user.publicKey
+  })
 
-  // const user = web3.Keypair.generate()
-  const mintAccounts = {
-    user: provider.wallet.publicKey,
-    mintAccount: mintAccount.address,
-    userTokenAccount: tokenAccount,
-    tokenProgram: TOKEN_PROGRAM_ID,
-    associateTokenProgram
-  };
+  const [ globalXnRecord] = web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("xn-global-counter"),
+      ],
+      program.programId
+  );
 
-  const hash1 = await program.methods.mintTokens().accounts(mintAccounts).signers([]).rpc();
-  const info = await connection.getTokenAccountBalance(tokenAccount);
-  console.log(hash1, info.value.uiAmount)
+  for await (const ethAddress of [
+      '6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      '7B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      '8B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      '9B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      'aB889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+  ]) {
+    const ethAddress20 = Buffer.from(ethAddress, 'hex')
 
-  // await program.methods.storeBlockNumber().accounts(accounts).signers([blockNumberAccount]).rpc();
+    const [ userXnRecord] = web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("sol-xen"),
+          ethAddress20,
+          user.publicKey.toBuffer()
+        ],
+        program.programId
+    );
 
-  // Fetch the stored value
-  // const value1 = await program.account.blockNumberAccount.fetch(blockNumberAccount.publicKey);
-  // console.log('Stored Block Number:', value1.blockNumber.toString());
+    const value0 = await program.account.globalXnRecord.fetch(globalXnRecord);
+    console.log('Read Global Counter:', value0.txs);
+    const [ userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("sol-xen-addr"),
+          Buffer.from([0, 0, 0, value0.txs, ]),
+        ],
+        program.programId
+    );
+
+    const mintAccounts = {
+      user: user.publicKey,
+      mintAccount: mintAccount.address,
+      userTokenAccount,
+      userXnRecord,
+      globalXnRecord,
+      userXnAddressRecords,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associateTokenProgram
+    };
+    // console.log('params', Array.from(ethAddress20).length, value0.points);
+    const mintTx = await program.methods.mintTokens({ address:  Array.from(ethAddress20) }, value0.txs)
+        .accounts(mintAccounts)
+        .signers([user])
+        .preInstructions([modifyComputeUnits, addPriorityFee])
+        .rpc();
+    const info1 = await connection.getTokenAccountBalance(userTokenAccount);
+    console.log('mint tx', mintTx);
+    console.log('Token Balance', info1.value.uiAmount)
+
+    // Fetch the user counter value
+    // const value1 = await program.account.xnRecord.fetch(userXnRecord);
+    // console.log('Stored User Counter:', value1.points, userXnRecord.toBase58());
+
+    // Fetch the global counter value
+    // const value2 = await program.account.xnRecord.fetch(globalXnRecord);
+    // console.log('Stored Global Counter:', value2.points);
+
+    // Fetch the tx iterator value
+    const value2 = await program.account.xnAddressRecord.fetch(userXnAddressRecords);
+    console.log('Stored Iterator:', value2);
+  }
 
 }
 
