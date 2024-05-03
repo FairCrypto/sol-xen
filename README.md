@@ -2,7 +2,29 @@
 
 ## Installation
 
+### Clone the repo
+
+...
+
+### Install deps
+
+```npm i```
+
+### Install TSX (for Typescript client)
+
+```npm i -g tsx```
+
+### Create .env file
+
+```
+USER_WALLET=<path_to_solana_wallet_file (id.json)>
+```
+
 ## Usage
+
+### Run test client script
+
+```tsx ./client/user.ts```
 
 ## Testing
 
