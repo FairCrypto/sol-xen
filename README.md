@@ -4,20 +4,32 @@
 
 ### Clone the repo
 
-...
+```
+git clone https://github.com/FairCrypto/sol-xen.git
+cd sol-xen
+```
 
-### Install deps
+### For Typescript client
 
-```npm i```
+#### Install NodeJS
 
-### Install TSX (for Typescript client)
+(To test if you have one
+```node --version```)
 
-```npm i -g tsx```
+https://nodejs.org/en/download
 
-### Create .env file
+#### Install deps
+
+```
+npm i
+npm i -g tsx
+```
+
+#### Create .env file
 
 ```
 USER_WALLET=<path_to_solana_wallet_file (id.json)>
+ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
 ```
 
 ## Usage
