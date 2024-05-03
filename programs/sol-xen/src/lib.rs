@@ -9,7 +9,7 @@ use anchor_spl::{
 use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 
-declare_id!("Fb8ZGotgnxYeGEEvZipQ3oibSon78eFVsq15SQDX1DmX");
+declare_id!("5kKinDAVeUYhMJ3W8iGh9qnDGmdUrzEgDLTcPQetbFaX");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
