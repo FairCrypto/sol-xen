@@ -11,7 +11,7 @@ dotenv.config();
 
 async function main() {
 // Set this to your local cluster or mainnet-beta, testnet, devnet
-    const network = process.env.CLUSTER_URL;
+    const network = process.env.ANCHOR_PROVIDER_URL;
     const connection = new web3.Connection(network, 'processed');
 
     const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
@@ -82,7 +82,7 @@ async function main() {
     ]) {
         const ethAddress20 = Buffer.from(ethAddress, 'hex')
 
-        const [userXnRecord] = web3.PublicKey.findProgramAddressSync(
+        const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
             [
                 Buffer.from("sol-xen"),
                 ethAddress20,
@@ -91,12 +91,12 @@ async function main() {
             program.programId
         );
 
-        const value0 = await program.account.globalXnRecord.fetch(globalXnRecord);
-        console.log('Read Global Counter:', value0.txs);
+        const globalXnRecord = await program.account.globalXnRecord.fetch(userXnRecordAccount);
+        console.log('Read Global Counter:', globalXnRecord.txs);
         const [userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
             [
                 Buffer.from("sol-xen-addr"),
-                Buffer.from([0, 0, 0, value0.txs]),
+                Buffer.from([0, 0, 0, globalXnRecord.txs]),
             ],
             program.programId
         );
@@ -105,21 +105,21 @@ async function main() {
             user: user.publicKey,
             mintAccount: mintAccount.address,
             userTokenAccount,
-            userXnRecord,
+            userXnRecord: userXnRecordAccount,
             globalXnRecord,
             userXnAddressRecords,
             tokenProgram: TOKEN_PROGRAM_ID,
             associateTokenProgram
         };
-        // console.log('params', Array.from(ethAddress20).length, value0.points);
-        const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)}, value0.txs)
+        const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)}, globalXnRecord.txs)
             .accounts(mintAccounts)
             .signers([user])
             .preInstructions([modifyComputeUnits, addPriorityFee])
             .rpc();
-        const info1 = await connection.getTokenAccountBalance(userTokenAccount);
+
+        const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
         console.log('mint tx', mintTx);
-        console.log('Token Balance', info1.value.uiAmount)
+        console.log('Token Balance', userTokenBalance.value.uiAmount)
 
         // Fetch the user counter value
         // const value1 = await program.account.xnRecord.fetch(userXnRecord);
@@ -130,8 +130,8 @@ async function main() {
         // console.log('Stored Global Counter:', value2.points);
 
         // Fetch the tx iterator value
-        const value2 = await program.account.xnAddressRecord.fetch(userXnAddressRecords);
-        console.log('Stored Iterator:', value2);
+        const xnAddressRecord = await program.account.xnAddressRecord.fetch(userXnAddressRecords);
+        console.log('Stored Iterator:', xnAddressRecord);
     }
 
 }
