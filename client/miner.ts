@@ -155,11 +155,19 @@ async function main() {
             program.programId
         );
 
+        function numToUint8Array(num: number, count: number = 4) {
+            const arr = new Uint8Array(count);
+            for(let i = 0; i < count; i++)
+                arr.set([num/0x100**i], count-1-i)
+            log(arr);
+            return arr;
+        }
+
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
         const [userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
             [
                 Buffer.from("sol-xen-addr"),
-                Buffer.from([0, 0, 0, globalXnRecord.txs]),
+                Buffer.from(numToUint8Array(globalXnRecord.txs)),
             ],
             program.programId
         );
