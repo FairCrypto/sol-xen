@@ -1,8 +1,6 @@
 use anchor_lang::{
     prelude::*,
     solana_program::entrypoint::ProgramResult,
-    system_program::CreateAccount,
-    system_program::create_account,
 };
 use anchor_spl::{
     token::{Token, Mint, MintTo, TokenAccount},
@@ -12,8 +10,83 @@ use anchor_spl::{
 use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 
-declare_id!("FCyE4xzCmCkpFvu5QMYgvt1MNoKKNR1q3yJxNnTjsCQU");
+declare_id!("UZ5TP2fxktDMEPUiANhWFFQqG9Ve7wppB73UUSodH1F");
 
+const MAX_HASHES: u8 = 70;
+const HASH_PATTERN: &str = "420";
+const SUPERHASH_PATTERN: &str = "42069";
+const AMP_START: u16 = 300;
+const AMP_CYCLE_SLOTS: u64 = 100_000;
+
+#[program]
+pub mod sol_xen {
+    use super::*;
+
+    pub fn create_mint(ctx: Context<InitTokenMint>) -> ProgramResult {
+
+        // initialize global state
+        ctx.accounts.global_xn_record.amp = AMP_START;
+        ctx.accounts.global_xn_record.last_amp_slot = Clock::get().unwrap().slot;
+
+        Ok(())
+    }
+
+    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount, _counter: u32) -> ProgramResult {
+
+        msg!("Global txs check: {}", ctx.accounts.global_xn_record.txs);
+
+        // Get the current slot number
+        let slot = Clock::get().unwrap().slot;
+
+        // update global AMP state if required
+        if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS {
+            ctx.accounts.global_xn_record.amp -= 1;
+        }
+
+        // Find hashes
+        let (hashes, superhashes) = find_hashes(slot);
+
+        // Mint solXEN tokens
+        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64);
+        let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
+        mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                MintTo {
+                    mint: ctx.accounts.mint_account.to_account_info(),
+                    authority: ctx.accounts.mint_account.to_account_info(),
+                    to: ctx.accounts.user_token_account.to_account_info(),
+                },
+                signer_seeds
+            ), // using PDA to sign
+            points,
+        )?;
+
+        // Update user points
+        ctx.accounts.user_xn_record.points += points as u128;
+
+        // Update tx record
+        msg!("Hex check: {}", hex::encode(_eth_account.address));
+        ctx.accounts.user_xn_address_records.address = _eth_account.address;
+        ctx.accounts.user_xn_address_records.hashes = hashes;
+        ctx.accounts.user_xn_address_records.superhashes = superhashes;
+        ctx.accounts.user_xn_address_records.key = ctx.accounts.user.key();
+
+        // Update global points
+        ctx.accounts.global_xn_record.points += points as u128;
+        ctx.accounts.global_xn_record.hashes += hashes as u32;
+        ctx.accounts.global_xn_record.superhashes += superhashes as u32;
+        ctx.accounts.global_xn_record.txs += 1;
+
+        msg!("Global points check: {}", ctx.accounts.global_xn_record.points);
+        msg!("User points check: {}", ctx.accounts.user_xn_record.points);
+
+        Ok(())
+    }
+}
+
+// TODO 1: add checks to lock this method to a specific (admin) Key
+// TODO 2: after the Token Mint is launched, remove authority from it (First Principles)
 #[derive(Accounts)]
 pub struct InitTokenMint<'info> {
     #[account(mut)]
@@ -93,13 +166,15 @@ pub struct MintTokens<'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct UserXnRecord {
-    pub points: u32,
+    pub points: u128,
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct GlobalXnRecord {
-    pub points: u32,
+    pub amp: u16,
+    pub last_amp_slot: u64,
+    pub points: u128,
     pub hashes: u32,
     pub superhashes: u32,
     pub txs: u32
@@ -117,8 +192,6 @@ pub struct XnAddressRecord {
     pub superhashes: u8
 }
 
-const MAX_HASHES: u8 = 80;
-
 pub fn find_hashes(slot: u64) -> (u8, u8) {
     let current_slot = slot;
     msg!("Current slot: {}", current_slot);
@@ -131,11 +204,11 @@ pub fn find_hashes(slot: u64) -> (u8, u8) {
         hasher.update(i.to_le_bytes());
         let result = hasher.finalize();
         let hex_string = format!("{:x}", result);
-        if hex_string.contains("42069") {
-            msg!("Found '42069' in hash at iteration {}: {}", i, hex_string);
+        if hex_string.contains(SUPERHASH_PATTERN) {
+            msg!("Found '{}' in hash at iteration {}: {}", SUPERHASH_PATTERN, i, hex_string);
             superhashes += 1;
-        } else if hex_string.contains("420") {
-            msg!("Found '420' in hash at iteration {}: {}", i, hex_string);
+        } else if hex_string.contains(HASH_PATTERN) {
+            msg!("Found '{}' in hash at iteration {}: {}", HASH_PATTERN, i, hex_string);
             hashes += 1;
         }
     }
@@ -147,77 +220,5 @@ pub fn find_hashes(slot: u64) -> (u8, u8) {
      pub address: [u8; 20],
 }
 
-/*
-pub fn print_account_meta<'info>(account: &AccountInfo<'info>) {
-    msg!("Account Key: {}", account.key);
-    msg!("Is Signer: {}", account.is_signer);
-    msg!("Is Writable: {}", account.is_writable);
-    msg!("Lamports: {}", account.lamports());
-    msg!("Owner: {}", account.owner);
-    msg!("Data Length: {}", account.data_len());
-}
-*/
 
-#[program]
-pub mod sol_xen {
-    use super::*;
-
-    pub fn create_mint(_ctx: Context<InitTokenMint>) -> ProgramResult {
-        Ok(())
-    }
-
-    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount, _counter: u32) -> ProgramResult {
-
-        // Print details about each account involved in this instruction
-        // print_account_meta(&ctx.accounts.user.to_account_info());
-        // print_account_meta(&ctx.accounts.mint_account.to_account_info());
-        // print_account_meta(&ctx.accounts.user_token_account.to_account_info());
-
-        msg!("Global txs check: {}", ctx.accounts.global_xn_record.txs);
-
-        // Get the current slot number
-        let clock = Clock::get()?;
-        
-        // Find hashes
-        let (hashes, superhashes) = find_hashes(clock.slot);
-
-        // Mint Sol-Xen tokens
-        // TODO: add real business logic
-        let points = 1_000_000_000u64 * (hashes as u64);
-        let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
-        mint_to(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-                MintTo {
-                    mint: ctx.accounts.mint_account.to_account_info(),
-                    authority: ctx.accounts.mint_account.to_account_info(),
-                    to: ctx.accounts.user_token_account.to_account_info(),
-                },
-                signer_seeds
-            ), // using PDA to sign
-            points,
-        )?;
-
-        // Update user points
-        ctx.accounts.user_xn_record.points += points as u32;
-
-        // Update tx record
-        msg!("Hex check: {}", hex::encode(_eth_account.address));
-        ctx.accounts.user_xn_address_records.address = _eth_account.address;
-        ctx.accounts.user_xn_address_records.hashes = hashes;
-        ctx.accounts.user_xn_address_records.superhashes = superhashes;
-        ctx.accounts.user_xn_address_records.key = ctx.accounts.user.key();
-
-        // Update global points
-        ctx.accounts.global_xn_record.points += points as u32;
-        ctx.accounts.global_xn_record.hashes += hashes as u32;
-        ctx.accounts.global_xn_record.superhashes += superhashes as u32;
-        ctx.accounts.global_xn_record.txs += 1;
-
-        msg!("Global points check: {}", ctx.accounts.global_xn_record.points);
-        msg!("User points check: {}", ctx.accounts.user_xn_record.points);
-
-        Ok(())
-    }
-}
 

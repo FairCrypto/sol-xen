@@ -1,25 +1,28 @@
 import {ComputeBudgetProgram} from '@solana/web3.js';
-import {AnchorProvider, setProvider, Program, web3, Wallet, BN, workspace, utils} from '@coral-xyz/anchor';
+import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
 import * as os from "node:os";
+import dotenv from "dotenv";
 import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import { SolXen } from '../target/types/sol_xen';
 
+dotenv.config();
+
 async function main() {
 // Set this to your local cluster or mainnet-beta, testnet, devnet
-  const network = 'http://127.0.0.1:8899';
+  const network = process.env.CLUSTER_URL;
   const connection = new web3.Connection(network, 'processed');
 
   const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 1_200_000
+    units: 1_400_000
   });
 
   const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
     microLamports: 1
   });
 
-  const keyPairFileName = '.config/solana/id.json'
+  const keyPairFileName = process.env.PATH_TO_KEY;
   const keyPairString = fs.readFileSync(path.resolve(os.homedir(), keyPairFileName), 'utf-8');
   const keyPair = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(keyPairString)));
   console.log('Using wallet', keyPair.publicKey.toBase58());
@@ -41,20 +44,10 @@ async function main() {
   // Load the program
   const program = workspace.SolXen as Program<SolXen>;
 
-  // Create an account to store the block number
-  const blockNumberAccount = web3.Keypair.generate();
+  // Create a random account for a test user
   const user = web3.Keypair.generate()
 
-  const tx1 = new web3.Transaction().add(
-    web3.SystemProgram.transfer({
-      fromPubkey: keyPair.publicKey,
-      toPubkey: blockNumberAccount.publicKey,
-      lamports: web3.LAMPORTS_PER_SOL,
-    })
-  );
-  // Sign transaction, broadcast, and confirm
-  const sig1 = await web3.sendAndConfirmTransaction(connection, tx1, [keyPair]);
-  console.log('Tx1 hash', sig1);
+  // send user some lamports
   const tx2 = new web3.Transaction().add(
     web3.SystemProgram.transfer({
       fromPubkey: keyPair.publicKey,
@@ -65,15 +58,15 @@ async function main() {
   // Sign transaction, broadcast, and confirm
   const sig2 = await web3.sendAndConfirmTransaction(connection, tx2, [keyPair]);
   console.log('Tx2 hash', sig2);
-  console.log('Balance1:', await connection.getBalance(keyPair.publicKey));
-  console.log('Balance2:', await connection.getBalance(blockNumberAccount.publicKey));
+  console.log('Admin Balance:', await connection.getBalance(keyPair.publicKey));
+  console.log('User Balance:', await connection.getBalance(user.publicKey));
 
   const createAccounts = {
     admin: provider.wallet.publicKey,
     tokenProgram: TOKEN_PROGRAM_ID,
   };
 
-  // Send the mint transaction
+  // Send the mint transaction (as Admin)
   const hash = await program.methods.createMint().accounts(createAccounts).signers([]).rpc();
   console.log('Create Mint tx hash', hash)
 
@@ -83,7 +76,6 @@ async function main() {
   );
 
   const mintAccount = await getMint(provider.connection, mint);
-  // console.log(mintAccount)
 
   const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
   const userTokenAccount = utils.token.associatedAddress({
@@ -97,6 +89,8 @@ async function main() {
       ],
       program.programId
   );
+
+  // send some test transactions as a user
 
   for await (const ethAddress of [
       '6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
@@ -121,7 +115,7 @@ async function main() {
     const [ userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
         [
           Buffer.from("sol-xen-addr"),
-          Buffer.from([0, 0, 0, value0.txs, ]),
+          Buffer.from([0, 0, 0, value0.txs]),
         ],
         program.programId
     );
@@ -161,5 +155,5 @@ async function main() {
 
 }
 
-main().then(() => console.log('Transaction complete.'))
+main().then(() => console.log('Test run complete'))
   .catch(err => console.error(err));
