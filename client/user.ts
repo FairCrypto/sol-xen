@@ -64,7 +64,7 @@ async function main() {
         owner: user.publicKey
     })
 
-    const [globalXnRecord] = web3.PublicKey.findProgramAddressSync(
+    const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
         [
             Buffer.from("xn-global-counter"),
         ],
@@ -91,7 +91,7 @@ async function main() {
             program.programId
         );
 
-        const globalXnRecord = await program.account.globalXnRecord.fetch(userXnRecordAccount);
+        const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
         console.log('Read Global Counter:', globalXnRecord.txs);
         const [userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
             [
@@ -106,7 +106,7 @@ async function main() {
             mintAccount: mintAccount.address,
             userTokenAccount,
             userXnRecord: userXnRecordAccount,
-            globalXnRecord,
+            globalXnRecord: globalXnRecordAddress,
             userXnAddressRecords,
             tokenProgram: TOKEN_PROGRAM_ID,
             associateTokenProgram
