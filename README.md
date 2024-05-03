@@ -38,6 +38,26 @@ ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
 
 ```tsx ./client/miner.ts mine --address <ethereum address> -fee 1```
 
+Full options list
+
+```
+miner.ts [command]
+
+Commands:
+  miner.ts mine     Checks gas-related params returned by current network
+  miner.ts balance  Checks balance of a master account
+
+Options:
+      --version          Show version number                           [boolean]
+  -f, --priorityFee      Solana priority fee, micro-lamports
+                                                           [number] [default: 1]
+  -u, --units            Solana MAX Compute Units    [number] [default: 1400000]
+      --address, --addr  Ethereum address to relate XN points to        [string]
+  -r, --runs             Number of runs                    [number] [default: 1]
+      --help             Show help                                     [boolean]
+
+```
+
 ### Run test client script
 
 ```tsx ./client/user.ts```
