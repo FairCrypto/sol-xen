@@ -14,6 +14,7 @@ declare_id!("Fb8ZGotgnxYeGEEvZipQ3oibSon78eFVsq15SQDX1DmX");
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
+const SUPERHASH_X: u16 = 500;
 const AMP_START: u16 = 300;
 const AMP_CYCLE_SLOTS: u64 = 100_000;
 // TODO: lock to a specifig admin key
@@ -52,8 +53,11 @@ pub mod sol_xen {
         // Find hashes
         let (hashes, superhashes) = find_hashes(slot);
 
-        // Mint solXEN tokens
-        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64);
+        // Calculate solXEN tokens
+        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64) 
+            + 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (SUPERHASH_X as u64) * (superhashes as u64);
+
+        // Mint solXEN tokens to user
         let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
         mint_to(
             CpiContext::new_with_signer(
