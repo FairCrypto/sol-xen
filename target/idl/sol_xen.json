@@ -1,0 +1,390 @@
+{
+  "address": "5kKinDAVeUYhMJ3W8iGh9qnDGmdUrzEgDLTcPQetbFaX",
+  "metadata": {
+    "name": "sol_xen",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_mint",
+      "discriminator": [
+        69,
+        44,
+        215,
+        132,
+        253,
+        214,
+        41,
+        45
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global_xn_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "mint_tokens",
+      "discriminator": [
+        59,
+        132,
+        24,
+        246,
+        122,
+        39,
+        8,
+        243
+      ],
+      "accounts": [
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "global_xn_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_xn_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  108,
+                  45,
+                  120,
+                  101,
+                  110
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "_eth_account.address"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_xn_address_records",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  108,
+                  45,
+                  120,
+                  101,
+                  110,
+                  45,
+                  97,
+                  100,
+                  100,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "_counter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_eth_account",
+          "type": {
+            "defined": {
+              "name": "EthAccount"
+            }
+          }
+        },
+        {
+          "name": "_counter",
+          "type": "u32"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GlobalXnRecord",
+      "discriminator": [
+        29,
+        48,
+        183,
+        205,
+        201,
+        7,
+        241,
+        7
+      ]
+    },
+    {
+      "name": "UserXnRecord",
+      "discriminator": [
+        49,
+        253,
+        198,
+        222,
+        235,
+        109,
+        119,
+        115
+      ]
+    },
+    {
+      "name": "XnAddressRecord",
+      "discriminator": [
+        11,
+        178,
+        101,
+        32,
+        27,
+        57,
+        67,
+        171
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MintIsAlreadyActive",
+      "msg": "solXEN Mint has been already initialized"
+    },
+    {
+      "code": 6001,
+      "name": "MintIsNotActive",
+      "msg": "solXEN Mint has not yet started or is over"
+    }
+  ],
+  "types": [
+    {
+      "name": "EthAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": {
+              "array": [
+                "u8",
+                20
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalXnRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amp",
+            "type": "u16"
+          },
+          {
+            "name": "last_amp_slot",
+            "type": "u64"
+          },
+          {
+            "name": "points",
+            "type": "u128"
+          },
+          {
+            "name": "hashes",
+            "type": "u32"
+          },
+          {
+            "name": "superhashes",
+            "type": "u32"
+          },
+          {
+            "name": "txs",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserXnRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "points",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "XnAddressRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": {
+              "array": [
+                "u8",
+                20
+              ]
+            }
+          },
+          {
+            "name": "hashes",
+            "type": "u8"
+          },
+          {
+            "name": "superhashes",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
