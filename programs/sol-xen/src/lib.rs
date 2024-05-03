@@ -1,6 +1,5 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::entrypoint::ProgramResult,
 };
 use anchor_spl::{
     token::{Token, Mint, MintTo, TokenAccount},
@@ -10,19 +9,24 @@ use anchor_spl::{
 use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 
-declare_id!("UZ5TP2fxktDMEPUiANhWFFQqG9Ve7wppB73UUSodH1F");
+declare_id!("Fb8ZGotgnxYeGEEvZipQ3oibSon78eFVsq15SQDX1DmX");
 
-const MAX_HASHES: u8 = 70;
+const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
 const AMP_START: u16 = 300;
 const AMP_CYCLE_SLOTS: u64 = 100_000;
+// TODO: lock to a specifig admin key
+// const ADMIN_KEY: &str = "somesecretadminkey";
 
 #[program]
 pub mod sol_xen {
     use super::*;
 
     pub fn create_mint(ctx: Context<InitTokenMint>) -> Result<()> {
+
+        msg!("Global last slot check: {}", ctx.accounts.global_xn_record.last_amp_slot);
+        require!(ctx.accounts.global_xn_record.last_amp_slot == 0, SolXenError::MintIsAlreadyActive);
 
         // initialize global state
         ctx.accounts.global_xn_record.amp = AMP_START;
@@ -88,6 +92,7 @@ pub mod sol_xen {
 
 // TODO 1: add checks to lock this method to a specific (admin) Key
 // TODO 2: after the Token Mint is launched, remove authority from it (First Principles)
+// TODO 3: add metadata support (https://github.com/solana-developers/program-examples/blob/main/tokens/pda-mint-authority/anchor/programs/token-minter/src/instructions/create.rs)
 #[derive(Accounts)]
 pub struct InitTokenMint<'info> {
     #[account(mut)]
@@ -219,6 +224,8 @@ pub fn find_hashes(slot: u64) -> (u8, u8) {
 
 #[error_code]
 pub enum SolXenError {
+    #[msg("solXEN Mint has been already initialized")]
+    MintIsAlreadyActive,
     #[msg("solXEN Mint has not yet started or is over")]
     MintIsNotActive
 }
