@@ -22,6 +22,10 @@ USER_WALLET=<path_to_solana_wallet_file (id.json)>
 
 ## Usage
 
+### Run miner script
+
+```tsx ./client/miner.ts mine --address <ethereum address> -fee 1```
+
 ### Run test client script
 
 ```tsx ./client/user.ts```
