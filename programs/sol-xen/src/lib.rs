@@ -22,7 +22,7 @@ const AMP_CYCLE_SLOTS: u64 = 100_000;
 pub mod sol_xen {
     use super::*;
 
-    pub fn create_mint(ctx: Context<InitTokenMint>) -> ProgramResult {
+    pub fn create_mint(ctx: Context<InitTokenMint>) -> Result<()> {
 
         // initialize global state
         ctx.accounts.global_xn_record.amp = AMP_START;
@@ -31,12 +31,14 @@ pub mod sol_xen {
         Ok(())
     }
 
-    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount, _counter: u32) -> ProgramResult {
+    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount, _counter: u32) -> Result<()> {
 
         msg!("Global txs check: {}", ctx.accounts.global_xn_record.txs);
 
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
+
+        require!(ctx.accounts.global_xn_record.amp > 0, SolXenError::MintIsNotActive);
 
         // update global AMP state if required
         if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS {
@@ -70,7 +72,6 @@ pub mod sol_xen {
         ctx.accounts.user_xn_address_records.address = _eth_account.address;
         ctx.accounts.user_xn_address_records.hashes = hashes;
         ctx.accounts.user_xn_address_records.superhashes = superhashes;
-        ctx.accounts.user_xn_address_records.key = ctx.accounts.user.key();
 
         // Update global points
         ctx.accounts.global_xn_record.points += points as u128;
@@ -184,10 +185,6 @@ pub struct GlobalXnRecord {
 #[derive(InitSpace)]
 pub struct XnAddressRecord {
     pub address: [u8; 20],
-    // TODO: problems with serialization
-    // #[max_len(40)]
-    // pub address: String,
-    pub key: Pubkey,
     pub hashes: u8,
     pub superhashes: u8
 }
@@ -220,5 +217,10 @@ pub fn find_hashes(slot: u64) -> (u8, u8) {
      pub address: [u8; 20],
 }
 
+#[error_code]
+pub enum SolXenError {
+    #[msg("solXEN Mint has not yet started or is over")]
+    MintIsNotActive
+}
 
 
