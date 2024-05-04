@@ -59,6 +59,10 @@ Options:
 
 ```
 
+### Run event listener script
+
+```tsx ./client/listener.ts```
+
 ### Run test client script
 
 ```tsx ./client/user.ts```
