@@ -45,7 +45,7 @@ with typescript
 
 or without it
 
-```node ./client/miner.tj mine --address <ethereum address> -fee 1```
+```node ./client/miner.js mine --address <ethereum address> -fee 1```
 
 or even without .env file
 
