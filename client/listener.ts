@@ -7,6 +7,7 @@ dotenv.config();
 debug.enable(process.env.DEBUG || '*')
 
 const Y = '\x1b[33m';
+const U = '\x1b[39m';
 
 async function main() {
     const log = debug("sol-xen")
@@ -27,7 +28,7 @@ async function main() {
     const onHashEvent = (event: any, slot: number) => {
         const { user, ethAccount, hashes, superhashes, points } = event;
         const account = Buffer.from(ethAccount).toString("hex");
-        log(`Event: ${Y}slot=${slot.toString()}, user=${user.toBase58()}, account=${account}, hashes=${hashes}, superhashes=${superhashes}, points=${points}`);
+        log(`Event: slot=${Y}${slot.toString()}${U}, user=${Y}${user.toBase58()}${U}, account=${Y}${account}${U}, hashes=${Y}${hashes}${U}, superhashes=${Y}${superhashes}${U}, points=${Y}${points}${U}`);
     }
 
     process.addListener("SIGINT", () => {
