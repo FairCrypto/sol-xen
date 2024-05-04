@@ -49,7 +49,7 @@ or without it
 
 or even without .env file
 
-```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export EDBUG=* && node ./client/miner.tj mine --address <ethereum address> -fee 1```
+```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export EDBUG=* && node ./client/miner.js mine --address <ethereum address> -fee 1```
 
 
 Full options list
