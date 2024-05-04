@@ -25,6 +25,8 @@ npm i
 npm i -g tsx
 ```
 
+N.B. you can skip the last one and run only JS files (see below)
+
 #### Create .env file
 
 ```
@@ -37,7 +39,18 @@ DEBUG=*
 
 ### Run miner script
 
+with typescript
+
 ```tsx ./client/miner.ts mine --address <ethereum address> -fee 1```
+
+or without it
+
+```node ./client/miner.tj mine --address <ethereum address> -fee 1```
+
+or even without .env file
+
+```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export EDBUG=* && node ./client/miner.tj mine --address <ethereum address> -fee 1```
+
 
 Full options list
 
