@@ -28,7 +28,8 @@ async function main() {
     const onHashEvent = (event: any, slot: number) => {
         const { user, ethAccount, hashes, superhashes, points } = event;
         const account = Buffer.from(ethAccount).toString("hex");
-        log(`Event: slot=${Y}${slot.toString()}${U}, user=${Y}${user.toBase58()}${U}, account=${Y}${account}${U}, hashes=${Y}${hashes}${U}, superhashes=${Y}${superhashes}${U}, points=${Y}${points}${U}`);
+        const minted = points / 1_000_000_000;
+        log(`Event: slot=${Y}${slot.toString()}${U}, user=${Y}${user.toBase58()}${U}, account=${Y}${account}${U}, hashes=${Y}${hashes}${U}, superhashes=${Y}${superhashes}${U}, minted=${Y}${minted}${U}`);
     }
 
     process.addListener("SIGINT", () => {
