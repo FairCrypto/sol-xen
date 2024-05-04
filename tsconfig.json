@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "typeRoots": ["./node_modules/@types"],
-    "rootDir": ".",
-    "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
     "lib": ["ESNext"],
