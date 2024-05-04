@@ -9,14 +9,15 @@ use anchor_spl::{
 use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 
-declare_id!("FbSuCvFkeCSLrwSXTCQoJKxT3BZEdbq6RrQ3E5cM7nWe");
+declare_id!("F8yUTgMN6E96QYhVVY9UVkKzKrDjpHLqrQ7bPCoqaJHz");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
 const SUPERHASH_X: u16 = 500;
 const AMP_START: u16 = 300;
-const AMP_CYCLE_SLOTS: u64 = 100_000;
+const AMP_CYCLE_SLOTS: u64 = 1_000;
+
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
 
@@ -48,6 +49,7 @@ pub mod sol_xen {
         // update global AMP state if required
         if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS {
             ctx.accounts.global_xn_record.amp -= 1;
+            ctx.accounts.global_xn_record.last_amp_slot = slot;
         }
 
         // Find hashes
