@@ -1,4 +1,5 @@
 .anchor
+.env
 .DS_Store
 target
 !target/idl
