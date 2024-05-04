@@ -21,13 +21,6 @@ enum Cmd {
 const G = '\x1b[32m';
 const Y = '\x1b[33m';
 
-function numToUint8Array(num: number, count: number = 4) {
-    const arr = new Uint8Array(count);
-    for (let i = 0; i < count; i++)
-        arr.set([num / 0x100 ** i], count - 1 - i)
-    return arr;
-}
-
 async function main() {
     const log = debug("sol-xen")
     const error = debug("sol-xen:error")
@@ -90,7 +83,7 @@ async function main() {
         try {
             address = getAddress(yArgs.argv.address)
         } catch (e) {
-            error(e.message);
+            console.error(e.message);
             process.exit(1)
         }
     }
@@ -107,7 +100,7 @@ async function main() {
         user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
         log(`${G}Using user wallet ${user.publicKey.toBase58()}`);
     } else {
-        error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file')
+        console.error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file')
         process.exit(1);
     }
 
