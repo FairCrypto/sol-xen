@@ -30,6 +30,7 @@ npm i -g tsx
 ```
 USER_WALLET=<path_to_solana_wallet_file (id.json)>
 ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
+DEBUG=*
 ```
 
 ## Usage
