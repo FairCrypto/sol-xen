@@ -27,10 +27,10 @@ async function main() {
     const [, , , ...params] = process.argv;
 
     let cmd: Cmd;
-    let address: string;
-    let priorityFee: number;
-    let units: number;
-    let runs: number;
+    let address: string = '';
+    let priorityFee: number = 1;
+    let units: number = 1_200_000;
+    let runs: number = 1;
 
     const yArgs = yargs(hideBin(process.argv))
         .command(Cmd.Mine, 'Checks gas-related params returned by current network')
@@ -59,30 +59,32 @@ async function main() {
             description: 'Number of runs'
         })
         .help()
+        .parseSync()
 
-    cmd = yArgs.argv._[0];
+    cmd = yArgs._[0] as Cmd;
 
     if (!cmd && params.length === 0) {
+        // @ts-ignore
         yArgs.help();
         process.exit(1)
     }
 
-    if (yArgs.argv.priorityFee) {
-        priorityFee = parseInt(yArgs.argv.priorityFee)
+    if (yArgs.priorityFee) {
+        priorityFee = Number(yArgs.priorityFee)
     }
 
-    if (yArgs.argv.units) {
-        units = parseInt(yArgs.argv.units)
+    if (yArgs.units) {
+        units = Number(yArgs.units)
     }
 
-    if (yArgs.argv.runs) {
-        runs = parseInt(yArgs.argv.runs)
+    if (yArgs.runs) {
+        runs = Number(yArgs.runs)
     }
 
-    if (yArgs.argv.address) {
+    if (yArgs.address) {
         try {
-            address = getAddress(yArgs.argv.address)
-        } catch (e) {
+            address = getAddress(yArgs.address)
+        } catch (e: any) {
             console.error(e.message);
             process.exit(1)
         }
