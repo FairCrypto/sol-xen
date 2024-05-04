@@ -91,27 +91,16 @@ async function main() {
             program.programId
         );
 
-        const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        console.log('Read Global Counter:', globalXnRecord.txs);
-        const [userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
-            [
-                Buffer.from("sol-xen-addr"),
-                Buffer.from([0, 0, 0, globalXnRecord.txs]),
-            ],
-            program.programId
-        );
-
         const mintAccounts = {
             user: user.publicKey,
             mintAccount: mintAccount.address,
             userTokenAccount,
             userXnRecord: userXnRecordAccount,
             globalXnRecord: globalXnRecordAddress,
-            userXnAddressRecords,
             tokenProgram: TOKEN_PROGRAM_ID,
             associateTokenProgram
         };
-        const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)}, globalXnRecord.txs)
+        const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)})
             .accounts(mintAccounts)
             .signers([user])
             .preInstructions([modifyComputeUnits, addPriorityFee])
@@ -129,9 +118,6 @@ async function main() {
         // const value2 = await program.account.xnRecord.fetch(globalXnRecord);
         // console.log('Stored Global Counter:', value2.points);
 
-        // Fetch the tx iterator value
-        const xnAddressRecord = await program.account.xnAddressRecord.fetch(userXnAddressRecords);
-        console.log('Stored Iterator:', xnAddressRecord);
     }
 
 }

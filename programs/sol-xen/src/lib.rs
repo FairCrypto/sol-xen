@@ -9,7 +9,7 @@ use anchor_spl::{
 use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 
-declare_id!("5kKinDAVeUYhMJ3W8iGh9qnDGmdUrzEgDLTcPQetbFaX");
+declare_id!("FbSuCvFkeCSLrwSXTCQoJKxT3BZEdbq6RrQ3E5cM7nWe");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -36,7 +36,7 @@ pub mod sol_xen {
         Ok(())
     }
 
-    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount, _counter: u32) -> Result<()> {
+    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount) -> Result<()> {
 
         msg!("Global txs check: {}", ctx.accounts.global_xn_record.txs);
 
@@ -75,11 +75,15 @@ pub mod sol_xen {
         // Update user points
         ctx.accounts.user_xn_record.points += points as u128;
 
-        // Update tx record
-        msg!("Hex check: {}", hex::encode(_eth_account.address));
-        ctx.accounts.user_xn_address_records.address = _eth_account.address;
-        ctx.accounts.user_xn_address_records.hashes = hashes;
-        ctx.accounts.user_xn_address_records.superhashes = superhashes;
+        // Emit hash tx record
+        emit!(HashEvent {
+            slot,
+            user: *ctx.accounts.user.key,
+            eth_account: _eth_account.address,
+            hashes,
+            superhashes,
+            points
+        });
 
         // Update global points
         ctx.accounts.global_xn_record.points += points as u128;
@@ -125,7 +129,7 @@ pub struct InitTokenMint<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(_eth_account: EthAccount, _counter: u32)]
+#[instruction(_eth_account: EthAccount)]
 pub struct MintTokens<'info> {
     #[account(
         init_if_needed,
@@ -152,17 +156,6 @@ pub struct MintTokens<'info> {
         bump
     )]
     pub user_xn_record: Box<Account<'info, UserXnRecord>>,
-    #[account(
-        init,
-        space = 8 + size_of::<XnAddressRecord>(),
-        payer = user,
-        seeds = [
-            b"sol-xen-addr",
-            _counter.to_be_bytes().as_ref()
-        ],
-        bump
-    )]
-    pub user_xn_address_records: Box<Account<'info, XnAddressRecord>>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"mint"], bump)]
@@ -188,14 +181,6 @@ pub struct GlobalXnRecord {
     pub hashes: u32,
     pub superhashes: u32,
     pub txs: u32
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct XnAddressRecord {
-    pub address: [u8; 20],
-    pub hashes: u8,
-    pub superhashes: u8
 }
 
 pub fn find_hashes(slot: u64) -> (u8, u8) {
@@ -224,6 +209,16 @@ pub fn find_hashes(slot: u64) -> (u8, u8) {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
  pub struct EthAccount {
      pub address: [u8; 20],
+}
+
+#[event]
+pub struct HashEvent {
+    slot: u64,
+    user: Pubkey,
+    eth_account: [u8; 20],
+    hashes: u8,
+    superhashes: u8,
+    points: u64
 }
 
 #[error_code]

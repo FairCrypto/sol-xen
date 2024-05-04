@@ -177,33 +177,22 @@ async function main() {
                 program.programId
             );
 
-            const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-            const [userXnAddressRecords] = web3.PublicKey.findProgramAddressSync(
-                [
-                    Buffer.from("sol-xen-addr"),
-                    Buffer.from(numToUint8Array(globalXnRecord.txs)),
-                ],
-                program.programId
-            );
-
             const mintAccounts = {
                 user: user.publicKey,
                 mintAccount: mintAccount.address,
                 userTokenAccount,
                 userXnRecord: userXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
-                userXnAddressRecords,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 associateTokenProgram
             };
-            const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)}, globalXnRecord.txs)
+            const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)})
                 .accounts(mintAccounts)
                 .signers([user])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
                 .rpc();
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            // const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
             const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
             log(`${Y}Tx=${mintTx}, hashes=${globalXnRecordNew.hashes}, superhashes=${globalXnRecordNew.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
         }
