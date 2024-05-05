@@ -1,19 +1,17 @@
 import dotenv from 'dotenv';
 import yargs from 'yargs';
-import {hideBin} from 'yargs/helpers';
+import { hideBin } from 'yargs/helpers';
 import { getAddress } from 'viem';
-//import { debug } from 'debug';
 import pkg from 'debug';
-const { debug } = pkg;
-import {ComputeBudgetProgram, LAMPORTS_PER_SOL} from '@solana/web3.js';
-import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
+import { ComputeBudgetProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils } from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
-import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
-import {SolXen} from '../target/types/sol_xen';
+import { getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { SolXen } from '../target/types/sol_xen';
 
 dotenv.config();
-debug.enable(process.env.DEBUG || '*')
+pkg.debug.enable(process.env.DEBUG || '*')
 
 enum Cmd {
     Mine = 'mine',
@@ -24,8 +22,8 @@ const G = '\x1b[32m';
 const Y = '\x1b[33m';
 
 async function main() {
-    const log = debug("sol-xen")
-    const error = debug("sol-xen:error")
+    const log = pkg.debug("sol-xen");
+    const error = pkg.debug("sol-xen:error");
     const [, , , ...params] = process.argv;
 
     let cmd: Cmd;
@@ -61,70 +59,86 @@ async function main() {
             description: 'Number of runs'
         })
         .help()
-        .parseSync()
+        .parseSync();
 
     cmd = yArgs._[0] as Cmd;
 
     if (!cmd && params.length === 0) {
-        // @ts-ignore
         yArgs.help();
-        process.exit(1)
+        process.exit(1);
     }
 
     if (yArgs.priorityFee) {
-        priorityFee = Number(yArgs.priorityFee)
+        priorityFee = Number(yArgs.priorityFee);
     }
 
     if (yArgs.units) {
-        units = Number(yArgs.units)
+        units = Number(yArgs.units);
     }
 
     if (yArgs.runs) {
-        runs = Number(yArgs.runs)
+        runs = Number(yArgs.runs);
     }
 
     if (yArgs.address) {
         try {
-            address = getAddress(yArgs.address)
+            address = getAddress(yArgs.address);
         } catch (e: any) {
             console.error(e.message);
-            process.exit(1)
+            process.exit(1);
         }
     }
 
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
-    log(`${G}Running on ${network}`)
-    const connection = new web3.Connection(network, 'processed');
+    log(`${G}Running on ${network}`);
 
-    // Load user wallet keypair
-    let user: web3.Keypair;
-    if (process.env.USER_WALLET) {
-        const userKeyPairFileName = process.env.USER_WALLET;
-        const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
-        user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
-        log(`${G}Using user wallet ${user.publicKey.toBase58()}`);
-    } else {
-        console.error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file')
-        process.exit(1);
-    }
+    const walletPaths = [
+        '/root/.config/solana/id1.json',
+        '/root/.config/solana/id2.json',
+        // Add more wallet paths as needed
+    ];
 
-    // Update this to the ID of your deployed program
-    const wallet = new Wallet(user);
-    // Create and set the provider
-    const provider = new AnchorProvider(
-        connection,
-        wallet,
-        // AnchorProvider.defaultOptions(),
-    );
-    setProvider(provider);
+    const promises = walletPaths.map(async (walletPath) => {
+        const connection = new web3.Connection(network, 'processed');
+        // Load user wallet keypair
+        let user: web3.Keypair;
+        if (walletPath) {
+            const userKeyPairString = fs.readFileSync(path.resolve(walletPath), 'utf-8');
+            user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
+            log(`${G}Using user wallet ${user.publicKey.toBase58()}`);
+        } else {
+            console.error('User wallet path not provided or not found. Set WALLET_PATHS in .env file');
+            process.exit(1);
+        }
 
-    // check balance
-    log(`${G}Block height=${await connection.getBlockHeight()}`);
-    log(`${G}SOL balance=${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}`);
+        // Create and set the provider
+        const provider = new AnchorProvider(
+            connection,
+            new Wallet(user),
+        );
+        setProvider(provider);
 
+        await processWallet(user, cmd, address, priorityFee, units, runs, network);
+    });
+
+    await Promise.all(promises);
+}
+
+async function processWallet(
+    user: web3.Keypair,
+    cmd: Cmd,
+    address: string,
+    priorityFee: number,
+    units: number,
+    runs: number,
+    network: string
+) {
+    const log = pkg.debug("sol-xen");
     // Load the program
     const program = workspace.SolXen as Program<SolXen>;
     log(`${G}Program ID=${program.programId}`);
+
+    const connection = new web3.Connection(network, 'processed');
 
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
         [
@@ -134,14 +148,12 @@ async function main() {
     );
 
     if (cmd === Cmd.Balance) {
-
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
         log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, points=${globalXnRecord.points}, amp=${globalXnRecord.amp}, `)
-
     } else if (cmd === Cmd.Mine) {
-
         log(`${G}Running miner with params: cmd=${cmd}, address=${address}, priorityFee=${priorityFee}, runs=${runs}`);
         log(`${G}Using CU max=${units}`);
+
         const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
             units
         });
@@ -154,16 +166,16 @@ async function main() {
             program.programId
         );
 
-        const mintAccount = await getMint(provider.connection, mint);
+        const mintAccount = await getMint(connection, mint);
 
-        const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
+        const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
         const userTokenAccount = utils.token.associatedAddress({
             mint: mintAccount.address,
             owner: user.publicKey
-        })
+        });
 
         for (let run = 1; run <= runs; run++) {
-            const ethAddress20 = Buffer.from(address.slice(2), 'hex')
+            const ethAddress20 = Buffer.from(address.slice(2), 'hex');
 
             const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
                 [
@@ -183,7 +195,14 @@ async function main() {
                 tokenProgram: TOKEN_PROGRAM_ID,
                 associateTokenProgram
             };
-            const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)})
+
+            const provider = new AnchorProvider(
+                connection,
+                new Wallet(user),
+            );
+            setProvider(provider);
+
+            const mintTx = await program.methods.mintTokens({ address: Array.from(ethAddress20) })
                 .accounts(mintAccounts)
                 .signers([user])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
@@ -194,10 +213,9 @@ async function main() {
             log(`${Y}Tx=${mintTx}, hashes=${globalXnRecordNew.hashes}, superhashes=${globalXnRecordNew.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
         }
     } else {
-        error('Unknown command:', cmd)
-        process.exit(1)
+        error('Unknown command:', cmd);
+        process.exit(1);
     }
-
 }
 
 main().then(() => console.log('Finished'))
