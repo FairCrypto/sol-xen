@@ -191,7 +191,8 @@ async function main() {
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-            log(`${Y}Tx=${mintTx}, hashes=${globalXnRecordNew.hashes}, superhashes=${globalXnRecordNew.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
+            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
+            log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
         }
     } else {
         error('Unknown command:', cmd)
