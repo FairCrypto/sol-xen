@@ -16,7 +16,7 @@ const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
 const SUPERHASH_X: u16 = 500;
 const AMP_START: u16 = 300;
-const AMP_CYCLE_SLOTS: u64 = 1_000;
+const AMP_CYCLE_SLOTS: u64 = 10_000;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
