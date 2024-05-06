@@ -173,6 +173,7 @@ async function main() {
                 ],
                 program.programId
             );
+            const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
 
             const mintAccounts = {
                 user: user.publicKey,
@@ -190,7 +191,6 @@ async function main() {
                 .rpc();
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
             log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
         }
