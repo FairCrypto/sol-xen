@@ -1,0 +1,22 @@
+[package]
+name = "sol-xen-client"
+version = "0.1.0"
+description = "solXEN Rust Client"
+edition = "2021"
+
+
+[[bin]]
+name = "sol_xen_client"
+path = "src/main.rs"
+
+[dependencies]
+borsh = "1.5.0"
+clap = { version = "4.5.4", features = ["derive"] }
+colored = "2.1.0"
+dotenv = "0.15.0"
+ethaddr = "0.2.2"
+hex = "0.4.3"
+solana-client = "1.18.12"
+solana-sdk = "1.18.12"
+spl-associated-token-account = "3.0.2"
+spl-token = "4.0.0"

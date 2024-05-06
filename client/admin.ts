@@ -11,10 +11,10 @@ dotenv.config();
 
 async function main() {
     // Set this to your local cluster or mainnet-beta, testnet, devnet
-    const network = process.env.ANCHOR_PROVIDER_URL;
+    const network = process.env.ANCHOR_PROVIDER_URL || '';
     const connection = new web3.Connection(network, 'processed');
 
-    const keyPairFileName = process.env.ANCHOR_WALLET;
+    const keyPairFileName = process.env.ANCHOR_WALLET || '';
     const keyPairString = fs.readFileSync(path.resolve(keyPairFileName), 'utf-8');
     const keyPair = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(keyPairString)));
     console.log('Using wallet', keyPair.publicKey.toBase58());
