@@ -83,7 +83,7 @@ pub mod sol_xen {
         let slot = Clock::get().unwrap().slot;
         
         require!(slot > 0, SolXenError::ZeroSlotValue);
-        require!(ctx.accounts.global_xn_record.amp > 0, SolXenError::MintIsNotActive);
+        // require!(ctx.accounts.global_xn_record.amp > 0, SolXenError::MintIsNotActive);
 
         // update global AMP state if required
         if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS {
@@ -100,31 +100,39 @@ pub mod sol_xen {
             + 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (SUPERHASH_X as u64) * (superhashes as u64);
 
         // Mint solXEN tokens to user
-        let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
-        mint_to(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-                MintTo {
-                    mint: ctx.accounts.mint_account.to_account_info(),
-                    authority: ctx.accounts.mint_account.to_account_info(),
-                    to: ctx.accounts.user_token_account.to_account_info(),
-                },
-                signer_seeds
-            ), // using PDA to sign
-            points,
-        )?;
+        if points > 0 {
+            let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
+            mint_to(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    MintTo {
+                        mint: ctx.accounts.mint_account.to_account_info(),
+                        authority: ctx.accounts.mint_account.to_account_info(),
+                        to: ctx.accounts.user_token_account.to_account_info(),
+                    },
+                    signer_seeds
+                ), // using PDA to sign
+                points,
+            )?;
+        }
 
         // Update user points
         ctx.accounts.user_xn_record.points += points as u128;
-        ctx.accounts.user_xn_record.hashes += hashes;
-        ctx.accounts.user_xn_record.superhashes += superhashes;
+        ctx.accounts.user_xn_record.hashes += hashes as u64;
+        ctx.accounts.user_xn_record.superhashes += superhashes as u64;
         
         // Update global points
         ctx.accounts.global_xn_record.points += points as u128;
-        ctx.accounts.global_xn_record.hashes += hashes as u32;
-        ctx.accounts.global_xn_record.superhashes += superhashes as u32;
+        ctx.accounts.global_xn_record.hashes += hashes as u64;
+        ctx.accounts.global_xn_record.superhashes += superhashes as u64;
         ctx.accounts.global_xn_record.txs += 1;
-        ctx.accounts.global_xn_record.nonce = ctx.accounts.user.key.to_bytes()[0..4].try_into().unwrap();
+        let mut hasher = Keccak256::new();
+        hasher.update(ctx.accounts.user.key.to_bytes());
+        hasher.update(hashes.to_le_bytes());
+        hasher.update(superhashes.to_le_bytes());
+        hasher.update(slot.to_le_bytes());
+        let nonce = hasher.finalize();
+        ctx.accounts.global_xn_record.nonce = nonce[0..4].try_into().unwrap();
 
         // Emit hash tx record
         emit!(HashEvent {
@@ -224,8 +232,8 @@ pub struct MintTokens<'info> {
 #[derive(InitSpace)]
 pub struct UserXnRecord {
     pub points: u128,
-    pub hashes: u8,
-    pub superhashes: u8
+    pub hashes: u64,
+    pub superhashes: u64
 }
 
 #[account]
@@ -234,9 +242,9 @@ pub struct GlobalXnRecord {
     pub amp: u16,
     pub last_amp_slot: u64,
     pub points: u128,
-    pub hashes: u32,
-    pub superhashes: u32,
-    pub txs: u32,
+    pub hashes: u64,
+    pub superhashes: u64,
+    pub txs: u64,
     pub nonce: [u8; 4]
 }
 
