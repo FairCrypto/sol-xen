@@ -132,6 +132,7 @@ async function main() {
         ],
         program.programId
     );
+    log(`globalXnRecordAddress=${globalXnRecordAddress.toBase58()}`)
 
     if (cmd === Cmd.Balance) {
 
