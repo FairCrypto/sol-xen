@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import {SolXen} from '../target/types/sol_xen';
 import {AnchorProvider, setProvider, Program, web3, workspace} from '@coral-xyz/anchor';
-import {debug} from "debug";
+//import { debug } from 'debug';
+import pkg from 'debug';
+const { debug } = pkg;
 
 dotenv.config();
 debug.enable(process.env.DEBUG || '*')

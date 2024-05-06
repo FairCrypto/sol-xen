@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import { AnchorProvider, setProvider, web3, workspace } from '@coral-xyz/anchor';
-import { debug } from "debug";
+//import { debug } from 'debug';
+import pkg from 'debug';
+const { debug } = pkg;
 dotenv.config();
 debug.enable(process.env.DEBUG || '*');
 const Y = '\x1b[33m';
