@@ -101,9 +101,9 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
 
     println!(
         "Using user wallet={}, account={}, fee={}, runs={}", 
-        payer.pubkey().to_string().green(), 
-        priority_fee.to_string().green(),
+        payer.pubkey().to_string().green(),
         ethereum_address.green(),
+        priority_fee.to_string().green(),
         runs.to_string().green()
     );
 
@@ -184,16 +184,21 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
 
         match result {
             Ok(signature) => {
-                let user_account_data_raw = client.get_account_data(&user_xn_record_pda).unwrap();
-                // println!("{} {}", user_account_data_raw.len(), size_of::<UserXnRecord>());
-                let user_data: [u8; size_of::<UserXnRecord>()] = user_account_data_raw.as_slice()[8..].try_into().unwrap();
-                let user_state = UserXnRecord::try_from_slice(user_data.as_ref()).unwrap();
-                println!(
-                    "Tx={}, points={}, amp={}",
-                    signature.to_string().yellow(),
-                    (user_state.points / 1_000_000_000).to_string().yellow(),
-                    global_state.amp.to_string().yellow()
-                )
+                let maybe_user_account_data_raw = client.get_account_data(&user_xn_record_pda);
+                match maybe_user_account_data_raw { 
+                    Ok(user_account_data_raw) => {
+                        let user_data: [u8; size_of::<UserXnRecord>()] = user_account_data_raw.as_slice()[8..].try_into().unwrap();
+                        let user_state = UserXnRecord::try_from_slice(user_data.as_ref()).unwrap();
+                        println!(
+                            "Tx={}, points={}, amp={}",
+                            signature.to_string().yellow(),
+                            (user_state.points / 1_000_000_000).to_string().yellow(),
+                            global_state.amp.to_string().yellow()
+                        )
+                    }
+                    Err(_) => println!("Account data not yet ready; skipping")
+                }
+                
             },
             Err(err) => println!("Failed: {:?}", err),
         };
