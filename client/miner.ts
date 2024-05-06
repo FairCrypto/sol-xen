@@ -170,7 +170,6 @@ async function main() {
                 [
                     Buffer.from("sol-xen"),
                     ethAddress20,
-                    user.publicKey.toBuffer()
                 ],
                 program.programId
             );

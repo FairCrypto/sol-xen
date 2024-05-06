@@ -109,6 +109,7 @@ async function main() {
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-global-counter"),
     ], program.programId);
+    log(`globalXnRecordAddress=${globalXnRecordAddress.toBase58()}`);
     if (cmd === Cmd.Balance) {
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
         log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, points=${globalXnRecord.points}, amp=${globalXnRecord.amp}, `);
@@ -134,7 +135,6 @@ async function main() {
             const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
                 Buffer.from("sol-xen"),
                 ethAddress20,
-                user.publicKey.toBuffer()
             ], program.programId);
             const mintAccounts = {
                 user: user.publicKey,

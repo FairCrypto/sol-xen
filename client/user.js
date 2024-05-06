@@ -7,7 +7,7 @@ import { getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 dotenv.config();
 async function main() {
     // Set this to your local cluster or mainnet-beta, testnet, devnet
-    const network = process.env.ANCHOR_PROVIDER_URL;
+    const network = process.env.ANCHOR_PROVIDER_URL || '';
     const connection = new web3.Connection(network, 'processed');
     const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
         units: 1_400_000
@@ -59,7 +59,6 @@ async function main() {
         const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
             Buffer.from("sol-xen"),
             ethAddress20,
-            user.publicKey.toBuffer()
         ], program.programId);
         const mintAccounts = {
             user: user.publicKey,

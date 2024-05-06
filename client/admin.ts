@@ -61,19 +61,40 @@ async function main() {
     console.log('Admin Balance:', await connection.getBalance(keyPair.publicKey));
     console.log('User Balance:', await connection.getBalance(user.publicKey));
 
-    const createAccounts = {
-        admin: provider.wallet.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
-    };
+    const METADATA_SEED = "metadata";
+    const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
-    // Send the mint transaction (as Admin)
-    const hash = await program.methods.createMint().accounts(createAccounts).signers([]).rpc();
-    console.log('Create Mint tx hash', hash)
 
     const [mint] = web3.PublicKey.findProgramAddressSync(
         [Buffer.from("mint")],
         program.programId
     );
+
+    const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from(METADATA_SEED),
+            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+            mint.toBuffer(),
+        ],
+        TOKEN_METADATA_PROGRAM_ID
+    );
+
+    const createAccounts = {
+        admin: provider.wallet.publicKey,
+        metadata: metadataAddress,
+        tokenProgram: TOKEN_PROGRAM_ID,
+    };
+
+    const metadata = {
+        name: "solXEN (gamma)",
+        symbol: "solXENg",
+        uri: "",
+        decimals: 9,
+    }
+
+    // Send the mint transaction (as Admin)
+    const hash = await program.methods.createMint(metadata).accounts(createAccounts).signers([]).rpc();
+    console.log('Create Mint tx hash', hash)
 
     const mintAccount = await getMint(provider.connection, mint);
     console.log(mintAccount.address.toBase58())

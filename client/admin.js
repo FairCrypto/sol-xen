@@ -6,9 +6,9 @@ import { getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 dotenv.config();
 async function main() {
     // Set this to your local cluster or mainnet-beta, testnet, devnet
-    const network = process.env.ANCHOR_PROVIDER_URL;
+    const network = process.env.ANCHOR_PROVIDER_URL || '';
     const connection = new web3.Connection(network, 'processed');
-    const keyPairFileName = process.env.ANCHOR_WALLET;
+    const keyPairFileName = process.env.ANCHOR_WALLET || '';
     const keyPairString = fs.readFileSync(path.resolve(keyPairFileName), 'utf-8');
     const keyPair = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(keyPairString)));
     console.log('Using wallet', keyPair.publicKey.toBase58());
@@ -44,14 +44,28 @@ async function main() {
     console.log('Tx2 hash', sig2);
     console.log('Admin Balance:', await connection.getBalance(keyPair.publicKey));
     console.log('User Balance:', await connection.getBalance(user.publicKey));
+    const METADATA_SEED = "metadata";
+    const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+    const [mint] = web3.PublicKey.findProgramAddressSync([Buffer.from("mint")], program.programId);
+    const [metadataAddress] = web3.PublicKey.findProgramAddressSync([
+        Buffer.from(METADATA_SEED),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        mint.toBuffer(),
+    ], TOKEN_METADATA_PROGRAM_ID);
     const createAccounts = {
         admin: provider.wallet.publicKey,
+        metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
     };
+    const metadata = {
+        name: "solXEN (gamma)",
+        symbol: "solXENg",
+        uri: "",
+        decimals: 9,
+    };
     // Send the mint transaction (as Admin)
-    const hash = await program.methods.createMint().accounts(createAccounts).signers([]).rpc();
+    const hash = await program.methods.createMint(metadata).accounts(createAccounts).signers([]).rpc();
     console.log('Create Mint tx hash', hash);
-    const [mint] = web3.PublicKey.findProgramAddressSync([Buffer.from("mint")], program.programId);
     const mintAccount = await getMint(provider.connection, mint);
     console.log(mintAccount.address.toBase58());
 }

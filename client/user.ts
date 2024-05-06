@@ -2,7 +2,6 @@ import {ComputeBudgetProgram} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
-import * as os from "node:os";
 import dotenv from "dotenv";
 import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {SolXen} from '../target/types/sol_xen';
@@ -11,7 +10,7 @@ dotenv.config();
 
 async function main() {
 // Set this to your local cluster or mainnet-beta, testnet, devnet
-    const network = process.env.ANCHOR_PROVIDER_URL;
+    const network = process.env.ANCHOR_PROVIDER_URL || '';
     const connection = new web3.Connection(network, 'processed');
 
     const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
@@ -86,7 +85,6 @@ async function main() {
             [
                 Buffer.from("sol-xen"),
                 ethAddress20,
-                user.publicKey.toBuffer()
             ],
             program.programId
         );
