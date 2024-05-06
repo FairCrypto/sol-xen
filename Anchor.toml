@@ -6,7 +6,7 @@ skip-lint = false
 seeds = true
 
 [programs.devnet]
-sol_xen = "F8yUTgMN6E96QYhVVY9UVkKzKrDjpHLqrQ7bPCoqaJHz"
+sol_xen = "Dx7zjkWZbUStmhjo8BrhbprtQCcMByJgCTEC6TLgkH8n"
 
 [registry]
 url = "https://api.apr.dev"
