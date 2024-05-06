@@ -132,12 +132,19 @@ async function main() {
         ],
         program.programId
     );
-    log(`globalXnRecordAddress=${globalXnRecordAddress.toBase58()}`)
+
+    const [mint] = web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("mint")],
+        program.programId
+    );
+
+    const mintAccount = await getMint(provider.connection, mint);
 
     if (cmd === Cmd.Balance) {
 
+        const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, points=${globalXnRecord.points}, amp=${globalXnRecord.amp}, `)
+        log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, supply=${totalSupply.value.uiAmount}, amp=${globalXnRecord.amp}, `)
 
     } else if (cmd === Cmd.Mine) {
 
@@ -150,12 +157,7 @@ async function main() {
             microLamports: priorityFee
         });
 
-        const [mint] = web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("mint")],
-            program.programId
-        );
 
-        const mintAccount = await getMint(provider.connection, mint);
 
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
         const userTokenAccount = utils.token.associatedAddress({
@@ -191,6 +193,8 @@ async function main() {
                 .rpc();
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
+            const totalSupply = await connection.getTokenSupply(mintAccount.address);
+            log(`tot supply=${totalSupply.value.uiAmount}`)
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
             log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
         }

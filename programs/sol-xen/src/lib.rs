@@ -11,7 +11,7 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("Ete9c11LWE3rVU7vB9nAMsrUmQBPuyixdwSJCsjgqWXe");
+declare_id!("BhLdjqkK4SLmJS41mqcXEg959EzHbzoQrnGArsXNkVxJ");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -117,12 +117,10 @@ pub mod sol_xen {
         }
 
         // Update user points
-        ctx.accounts.user_xn_record.points += points as u128;
         ctx.accounts.user_xn_record.hashes += hashes as u64;
         ctx.accounts.user_xn_record.superhashes += superhashes as u64;
         
         // Update global points
-        ctx.accounts.global_xn_record.points += points as u128;
         ctx.accounts.global_xn_record.hashes += hashes as u64;
         ctx.accounts.global_xn_record.superhashes += superhashes as u64;
         ctx.accounts.global_xn_record.txs += 1;
@@ -231,7 +229,6 @@ pub struct MintTokens<'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct UserXnRecord {
-    pub points: u128,
     pub hashes: u64,
     pub superhashes: u64
 }
@@ -241,7 +238,6 @@ pub struct UserXnRecord {
 pub struct GlobalXnRecord {
     pub amp: u16,
     pub last_amp_slot: u64,
-    pub points: u128,
     pub hashes: u64,
     pub superhashes: u64,
     pub txs: u64,

@@ -1,5 +1,5 @@
 {
-  "address": "Ete9c11LWE3rVU7vB9nAMsrUmQBPuyixdwSJCsjgqWXe",
+  "address": "BhLdjqkK4SLmJS41mqcXEg959EzHbzoQrnGArsXNkVxJ",
   "metadata": {
     "name": "sol_xen",
     "version": "0.1.0",
@@ -318,20 +318,16 @@
             "type": "u64"
           },
           {
-            "name": "points",
-            "type": "u128"
-          },
-          {
             "name": "hashes",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "superhashes",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "txs",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "nonce",
@@ -412,16 +408,12 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "points",
-            "type": "u128"
-          },
-          {
             "name": "hashes",
-            "type": "u8"
+            "type": "u64"
           },
           {
             "name": "superhashes",
-            "type": "u8"
+            "type": "u64"
           }
         ]
       }

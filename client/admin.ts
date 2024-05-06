@@ -86,8 +86,8 @@ async function main() {
     };
 
     const metadata = {
-        name: "solXEN (gamma)",
-        symbol: "solXENg",
+        name: "solXEN (gamma 1)",
+        symbol: "solXENg1",
         uri: "",
         decimals: 9,
     }
@@ -101,5 +101,5 @@ async function main() {
 
 }
 
-main().then(() => console.log('Test run complete'))
+main().then(() => console.log('Done'))
     .catch(err => console.error(err));
