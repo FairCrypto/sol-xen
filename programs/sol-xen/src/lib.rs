@@ -11,14 +11,14 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("BhLdjqkK4SLmJS41mqcXEg959EzHbzoQrnGArsXNkVxJ");
+declare_id!("9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
 const SUPERHASH_X: u16 = 500;
 const AMP_START: u16 = 300;
-const AMP_CYCLE_SLOTS: u64 = 10_000;
+const AMP_CYCLE_SLOTS: u64 = 100;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -86,7 +86,7 @@ pub mod sol_xen {
         // require!(ctx.accounts.global_xn_record.amp > 0, SolXenError::MintIsNotActive);
 
         // update global AMP state if required
-        if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS {
+        if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS && ctx.accounts.global_xn_record.amp > 0 {
             ctx.accounts.global_xn_record.amp -= 1;
             ctx.accounts.global_xn_record.last_amp_slot = slot;
         }
