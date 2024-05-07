@@ -202,7 +202,7 @@ async function main() {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
+            log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${(userTokenBalance.value.uiAmount ||0).toLocaleString()} supply=${(totalSupply.value.uiAmount || 0).toLocaleString()}`);
         }
     } else {
         error('Unknown command:', cmd)
