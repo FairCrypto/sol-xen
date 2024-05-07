@@ -58,8 +58,8 @@ async function main() {
         tokenProgram: TOKEN_PROGRAM_ID,
     };
     const metadata = {
-        name: "solXEN (gamma)",
-        symbol: "solXENg",
+        name: "solXEN (gamma 2)",
+        symbol: "solXENg1",
         uri: "",
         decimals: 9,
     };
@@ -69,5 +69,5 @@ async function main() {
     const mintAccount = await getMint(provider.connection, mint);
     console.log(mintAccount.address.toBase58());
 }
-main().then(() => console.log('Test run complete'))
+main().then(() => console.log('Done'))
     .catch(err => console.error(err));

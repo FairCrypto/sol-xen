@@ -201,7 +201,6 @@ async function main() {
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            log(`tot supply=${totalSupply.value.uiAmount}`)
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
             log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
         }
