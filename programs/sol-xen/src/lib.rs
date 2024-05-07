@@ -11,7 +11,7 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8");
+declare_id!("CgSerSwzMo5jbqMjZDA6en5at3ywTKavKS9ie1MhCh6M");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -76,9 +76,7 @@ pub mod sol_xen {
     }
 
     pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount) -> Result<()> {
-
-        msg!("Global txs check: {}", ctx.accounts.global_xn_record.txs);
-
+        
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
         
@@ -119,6 +117,7 @@ pub mod sol_xen {
         // Update user points
         ctx.accounts.user_xn_record.hashes += hashes as u64;
         ctx.accounts.user_xn_record.superhashes += superhashes as u64;
+        ctx.accounts.user_xn_record.points += points as u128;
         
         // Update global points
         ctx.accounts.global_xn_record.hashes += hashes as u64;
@@ -230,7 +229,8 @@ pub struct MintTokens<'info> {
 #[derive(InitSpace)]
 pub struct UserXnRecord {
     pub hashes: u64,
-    pub superhashes: u64
+    pub superhashes: u64,
+    pub points: u128
 }
 
 #[account]

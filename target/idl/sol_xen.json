@@ -1,5 +1,5 @@
 {
-  "address": "9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8",
+  "address": "CgSerSwzMo5jbqMjZDA6en5at3ywTKavKS9ie1MhCh6M",
   "metadata": {
     "name": "sol_xen",
     "version": "0.1.0",
@@ -414,6 +414,10 @@
           {
             "name": "superhashes",
             "type": "u64"
+          },
+          {
+            "name": "points",
+            "type": "u128"
           }
         ]
       }
