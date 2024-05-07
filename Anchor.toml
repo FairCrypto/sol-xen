@@ -6,13 +6,15 @@ skip-lint = false
 seeds = true
 
 [programs.devnet]
-sol_xen = "Dx7zjkWZbUStmhjo8BrhbprtQCcMByJgCTEC6TLgkH8n"
+sol_xen = "9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8"
+
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "devnet"
+# cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

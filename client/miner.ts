@@ -132,13 +132,41 @@ async function main() {
         ],
         program.programId
     );
-    log(`globalXnRecordAddress=${globalXnRecordAddress.toBase58()}`)
+
+    const ethAddress20 = Buffer.from(address.slice(2), 'hex')
+    const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("sol-xen"),
+            ethAddress20,
+        ],
+        program.programId
+    );
+
+    const [mint] = web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("mint")],
+        program.programId
+    );
+
+    const mintAccount = await getMint(provider.connection, mint);
+
+    const userTokenAccount = utils.token.associatedAddress({
+        mint: mintAccount.address,
+        owner: user.publicKey
+    })
 
     if (cmd === Cmd.Balance) {
 
+        const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, points=${globalXnRecord.points}, amp=${globalXnRecord.amp}, `)
+        log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, supply=${totalSupply.value.uiAmount}, amp=${globalXnRecord.amp}`)
 
+        if (address) {
+            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
+            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
+            log(`${G}User state: hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`)
+        } else {
+            log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
+        }
     } else if (cmd === Cmd.Mine) {
 
         log(`${G}Running miner with params: cmd=${cmd}, address=${address}, priorityFee=${priorityFee}, runs=${runs}`);
@@ -150,30 +178,11 @@ async function main() {
             microLamports: priorityFee
         });
 
-        const [mint] = web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("mint")],
-            program.programId
-        );
-
-        const mintAccount = await getMint(provider.connection, mint);
-
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
-        const userTokenAccount = utils.token.associatedAddress({
-            mint: mintAccount.address,
-            owner: user.publicKey
-        })
 
         for (let run = 1; run <= runs; run++) {
-            const ethAddress20 = Buffer.from(address.slice(2), 'hex')
 
-            const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
-                [
-                    Buffer.from("sol-xen"),
-                    ethAddress20,
-                    user.publicKey.toBuffer()
-                ],
-                program.programId
-            );
+            const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
 
             const mintAccounts = {
                 user: user.publicKey,
@@ -191,8 +200,9 @@ async function main() {
                 .rpc();
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-            log(`${Y}Tx=${mintTx}, hashes=${globalXnRecordNew.hashes}, superhashes=${globalXnRecordNew.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
+            const totalSupply = await connection.getTokenSupply(mintAccount.address);
+            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
+            log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${(userTokenBalance.value.uiAmount ||0).toLocaleString()} supply=${(totalSupply.value.uiAmount || 0).toLocaleString()}`);
         }
     } else {
         error('Unknown command:', cmd)
@@ -201,5 +211,5 @@ async function main() {
 
 }
 
-main().then(() => console.log('Finished'))
+main().then(() => {})
     .catch(err => console.error(err));

@@ -1,5 +1,5 @@
 {
-  "address": "Dx7zjkWZbUStmhjo8BrhbprtQCcMByJgCTEC6TLgkH8n",
+  "address": "9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8",
   "metadata": {
     "name": "sol_xen",
     "version": "0.1.0",
@@ -73,8 +73,16 @@
           }
         },
         {
+          "name": "metadata",
+          "writable": true
+        },
+        {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
         {
           "name": "system_program",
@@ -85,7 +93,16 @@
           "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "metadata",
+          "type": {
+            "defined": {
+              "name": "InitTokenParams"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "mint_tokens",
@@ -154,10 +171,6 @@
               {
                 "kind": "arg",
                 "path": "_eth_account.address"
-              },
-              {
-                "kind": "account",
-                "path": "user"
               }
             ]
           }
@@ -266,6 +279,11 @@
       "code": 6001,
       "name": "MintIsNotActive",
       "msg": "solXEN Mint has not yet started or is over"
+    },
+    {
+      "code": 6002,
+      "name": "ZeroSlotValue",
+      "msg": "Slot value is Zero"
     }
   ],
   "types": [
@@ -300,20 +318,25 @@
             "type": "u64"
           },
           {
-            "name": "points",
-            "type": "u128"
-          },
-          {
             "name": "hashes",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "superhashes",
-            "type": "u32"
+            "type": "u64"
           },
           {
             "name": "txs",
-            "type": "u32"
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
           }
         ]
       }
@@ -356,13 +379,41 @@
       }
     },
     {
+      "name": "InitTokenParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "UserXnRecord",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "points",
-            "type": "u128"
+            "name": "hashes",
+            "type": "u64"
+          },
+          {
+            "name": "superhashes",
+            "type": "u64"
           }
         ]
       }
