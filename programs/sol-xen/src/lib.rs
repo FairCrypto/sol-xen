@@ -11,14 +11,14 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("CgSerSwzMo5jbqMjZDA6en5at3ywTKavKS9ie1MhCh6M");
+declare_id!("Gdqbk3QeeAyu1V9ZPrhXgBPCQowgsSP6BK4aU1eoJh2W");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
 const SUPERHASH_X: u16 = 500;
 const AMP_START: u16 = 300;
-const AMP_CYCLE_SLOTS: u64 = 100;
+const AMP_CYCLE_SLOTS: u64 = 1_000;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";

@@ -164,7 +164,7 @@ async function main() {
         if (address) {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`)
+            log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}, points=${G}${(userXnRecord?.points.toNumber() || 0) / 1000000000}${U}`)
         } else {
             log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
         }
