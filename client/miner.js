@@ -19,6 +19,7 @@ var Cmd;
 })(Cmd || (Cmd = {}));
 const G = '\x1b[32m';
 const Y = '\x1b[33m';
+const U = '\x1b[39m';
 async function main() {
     const log = debug("sol-xen");
     const error = debug("sol-xen:error");
@@ -81,7 +82,7 @@ async function main() {
         }
     }
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
-    log(`${G}Running on ${network}`);
+    log(`Running on ${G}${network}`);
     const connection = new web3.Connection(network, 'processed');
     // Load user wallet keypair
     let user;
@@ -89,7 +90,7 @@ async function main() {
         const userKeyPairFileName = process.env.USER_WALLET;
         const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
         user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
-        log(`${G}Using user wallet ${user.publicKey.toBase58()}`);
+        log(`Using user wallet ${G}${user.publicKey.toBase58()}`);
     }
     else {
         console.error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file');
@@ -101,11 +102,11 @@ async function main() {
     const provider = new AnchorProvider(connection, wallet);
     setProvider(provider);
     // check balance
-    log(`${G}Block height=${await connection.getBlockHeight()}`);
-    log(`${G}SOL balance=${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}`);
+    log(`Block height=${G}${await connection.getBlockHeight()}`);
+    log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}`);
     // Load the program
     const program = workspace.SolXen;
-    log(`${G}Program ID=${program.programId}`);
+    log(`Program ID=${G}${program.programId}`);
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-global-counter"),
     ], program.programId);
@@ -123,19 +124,19 @@ async function main() {
     if (cmd === Cmd.Balance) {
         const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, supply=${totalSupply.value.uiAmount}, amp=${globalXnRecord.amp}`);
+        log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`);
         if (address) {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`${G}User state: hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
+            log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`);
         }
         else {
             log("to show user balance, run with --address YOUR_ETH_ADDRESS key");
         }
     }
     else if (cmd === Cmd.Mine) {
-        log(`${G}Running miner with params: cmd=${cmd}, address=${address}, priorityFee=${priorityFee}, runs=${runs}`);
-        log(`${G}Using CU max=${units}`);
+        log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}`);
+        log(`Using CU max=${G}${units}`);
         const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
             units
         });
@@ -162,7 +163,7 @@ async function main() {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
             const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`);
+            log(`Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U} hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount || 0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}`);
         }
     }
     else {
