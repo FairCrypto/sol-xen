@@ -76,10 +76,10 @@ pub mod sol_xen {
     }
 
     pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount) -> Result<()> {
-        
+
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
-        
+
         require!(slot > 0, SolXenError::ZeroSlotValue);
         // require!(ctx.accounts.global_xn_record.amp > 0, SolXenError::MintIsNotActive);
 
@@ -94,7 +94,7 @@ pub mod sol_xen {
         let (hashes, superhashes) = find_hashes(slot, nonce);
 
         // Calculate solXEN tokens
-        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64) 
+        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64)
             + 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (SUPERHASH_X as u64) * (superhashes as u64);
 
         // Mint solXEN tokens to user
@@ -114,11 +114,16 @@ pub mod sol_xen {
             )?;
         }
 
-        // Update user points
-        ctx.accounts.user_xn_record.hashes += hashes as u64;
-        ctx.accounts.user_xn_record.superhashes += superhashes as u64;
-        ctx.accounts.user_xn_record.points += points as u128;
-        
+        // Update user points by eth address
+        ctx.accounts.user_xn_record_by_eth.hashes += hashes as u64;
+        ctx.accounts.user_xn_record_by_eth.superhashes += superhashes as u64;
+        ctx.accounts.user_xn_record_by_eth.points += points as u128;
+
+        // Update user points by sol address
+        ctx.accounts.user_xn_record_by_sol.hashes += hashes as u64;
+        ctx.accounts.user_xn_record_by_sol.superhashes += superhashes as u64;
+        ctx.accounts.user_xn_record_by_sol.points += points as u128;
+
         // Update global points
         ctx.accounts.global_xn_record.hashes += hashes as u64;
         ctx.accounts.global_xn_record.superhashes += superhashes as u64;
@@ -209,12 +214,23 @@ pub struct MintTokens<'info> {
         space = 8 + size_of::<UserXnRecord>(),
         payer = user,
         seeds = [
-            b"sol-xen",
+            b"sol-xen-by-eth",
             _eth_account.address.as_ref(),
         ],
         bump
     )]
-    pub user_xn_record: Box<Account<'info, UserXnRecord>>,
+    pub user_xn_record_by_eth: Box<Account<'info, UserXnRecord>>,
+    #[account(
+        init_if_needed,
+        space = 8 + size_of::<UserXnRecord>(),
+        payer = user,
+        seeds = [
+        b"sol-xen-by-sol",
+        user.key().as_ref(),
+        ],
+        bump
+    )]
+    pub user_xn_record_by_sol: Box<Account<'info, UserXnRecord>>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"mint"], bump)]
