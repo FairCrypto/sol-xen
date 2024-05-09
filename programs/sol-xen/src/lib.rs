@@ -11,7 +11,7 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("Gdqbk3QeeAyu1V9ZPrhXgBPCQowgsSP6BK4aU1eoJh2W");
+declare_id!("9atFfZJMx7R3Xe3H7v13Jumf1G3Cb7YDfLKXKxwKmCa7");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -211,7 +211,7 @@ pub struct MintTokens<'info> {
     pub global_xn_record: Box<Account<'info, GlobalXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserXnRecord>(),
+        space = 8 + size_of::<UserEthXnRecord>(),
         payer = user,
         seeds = [
             b"sol-xen-by-eth",
@@ -219,18 +219,18 @@ pub struct MintTokens<'info> {
         ],
         bump
     )]
-    pub user_xn_record_by_eth: Box<Account<'info, UserXnRecord>>,
+    pub user_xn_record_by_eth: Box<Account<'info, UserEthXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserXnRecord>(),
+        space = 8 + size_of::<UserSolXnRecord>(),
         payer = user,
         seeds = [
-        b"sol-xen-by-sol",
-        user.key().as_ref(),
+            b"sol-xen-by-sol",
+            user.key().as_ref(),
         ],
         bump
     )]
-    pub user_xn_record_by_sol: Box<Account<'info, UserXnRecord>>,
+    pub user_xn_record_by_sol: Box<Account<'info, UserSolXnRecord>>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"mint"], bump)]
@@ -243,7 +243,15 @@ pub struct MintTokens<'info> {
 
 #[account]
 #[derive(InitSpace)]
-pub struct UserXnRecord {
+pub struct UserEthXnRecord {
+    pub hashes: u64,
+    pub superhashes: u64,
+    pub points: u128
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct UserSolXnRecord {
     pub hashes: u64,
     pub superhashes: u64,
     pub points: u128

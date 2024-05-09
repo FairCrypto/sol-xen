@@ -135,10 +135,18 @@ async function main() {
     );
 
     const ethAddress20 = Buffer.from(address.slice(2), 'hex')
-    const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
+    const [userEthXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
         [
-            Buffer.from("sol-xen"),
+            Buffer.from("sol-xen-by-eth"),
             ethAddress20,
+        ],
+        program.programId
+    );
+
+    const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("sol-xen-by-sol"),
+            user.publicKey.toBuffer(),
         ],
         program.programId
     );
@@ -163,7 +171,7 @@ async function main() {
 
         if (address) {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
             log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}, points=${G}${(userXnRecord?.points.toNumber() || 0) / 1000000000}${U}`)
         } else {
             log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
@@ -189,8 +197,9 @@ async function main() {
                 user: user.publicKey,
                 mintAccount: mintAccount.address,
                 userTokenAccount,
-                userXnRecord: userXnRecordAccount,
-                globalXnRecord: globalXnRecordAddress,
+                // userXnRecordRyEth: userEthXnRecordAccount,
+                // userXnRecordRySth: userSolXnRecordAccount,
+                // globalXnRecord: globalXnRecordAddress,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 associateTokenProgram
             };
@@ -202,7 +211,7 @@ async function main() {
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
             log(`Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U} hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount ||0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}`);
         }
     } else {
