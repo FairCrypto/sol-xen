@@ -111,9 +111,13 @@ async function main() {
         Buffer.from("xn-global-counter"),
     ], program.programId);
     const ethAddress20 = Buffer.from(address.slice(2), 'hex');
-    const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
-        Buffer.from("sol-xen"),
+    const [userEthXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
+        Buffer.from("xn-by-eth"),
         ethAddress20,
+    ], program.programId);
+    const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
+        Buffer.from("xn-by-sol"),
+        user.publicKey.toBuffer(),
     ], program.programId);
     const [mint] = web3.PublicKey.findProgramAddressSync([Buffer.from("mint")], program.programId);
     const mintAccount = await getMint(provider.connection, mint);
@@ -127,7 +131,7 @@ async function main() {
         log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`);
         if (address) {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userXnRecordAccount);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
             log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`);
         }
         else {
@@ -150,7 +154,8 @@ async function main() {
                 user: user.publicKey,
                 mintAccount: mintAccount.address,
                 userTokenAccount,
-                userXnRecord: userXnRecordAccount,
+                xnByEth: userEthXnRecordAccount,
+                xnBySol: userSolXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 associateTokenProgram
@@ -162,7 +167,7 @@ async function main() {
                 .rpc();
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userXnRecordAccount);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
             log(`Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}  balance=${Y}${(userTokenBalance.value.uiAmount || 0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}`);
         }
     }
