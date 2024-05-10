@@ -11,12 +11,12 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("HPuesDKB7YTfrbpD6ugPiYHbqNWRNCy6s6TMV8X4biWc");
+declare_id!("7LBe4g8Q6hq8Sk1nT8tQUiz2mCHjsoQJbmZ7zCQtutuT");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
-const SUPERHASH_X: u16 = 500;
+const SUPERHASH_X: u16 = 250;
 const AMP_START: u16 = 300;
 const AMP_CYCLE_SLOTS: u64 = 5_000;
 
@@ -289,6 +289,9 @@ pub fn find_hashes(slot: u64, nonce: [u8; 4]) -> (u8, u8) {
             msg!("Found '{}' in hash at iteration {}: {}", HASH_PATTERN, i, hex_string);
             hashes += 1;
         }
+    }
+    if superhashes == 0 && hashes == 0 {
+        msg!("Found zero targets in hashes after {} iterations", MAX_HASHES);
     }
     return (hashes, superhashes);
 }

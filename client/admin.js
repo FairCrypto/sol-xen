@@ -59,7 +59,7 @@ async function main() {
     };
     const metadata = {
         name: "solXEN (delta)",
-        symbol: "solXENd1",
+        symbol: "solXENd2",
         uri: "",
         decimals: 9,
     };
