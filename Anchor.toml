@@ -6,7 +6,7 @@ skip-lint = false
 seeds = true
 
 [programs.devnet]
-sol_xen = "Gdqbk3QeeAyu1V9ZPrhXgBPCQowgsSP6BK4aU1eoJh2W"
+sol_xen = "HPuesDKB7YTfrbpD6ugPiYHbqNWRNCy6s6TMV8X4biWc"
 
 
 [registry]
