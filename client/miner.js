@@ -127,7 +127,7 @@ async function main() {
         log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`);
         if (address) {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userXnRecordAccount);
             log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`);
         }
         else {
@@ -162,8 +162,8 @@ async function main() {
                 .rpc();
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U} hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount || 0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}`);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userXnRecordAccount);
+            log(`Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}  balance=${Y}${(userTokenBalance.value.uiAmount || 0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}`);
         }
     }
     else {

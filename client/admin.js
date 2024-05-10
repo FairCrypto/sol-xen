@@ -58,8 +58,8 @@ async function main() {
         tokenProgram: TOKEN_PROGRAM_ID,
     };
     const metadata = {
-        name: "solXEN (gamma 2)",
-        symbol: "solXENg1",
+        name: "solXEN (delta)",
+        symbol: "solXENd1",
         uri: "",
         decimals: 9,
     };
