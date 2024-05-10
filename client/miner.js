@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { getAddress } from 'viem';
+import { getAddress, isAddress } from 'viem';
 //import { debug } from 'debug';
 import pkg from 'debug';
 const { debug } = pkg;
@@ -75,6 +75,10 @@ async function main() {
     if (yArgs.address) {
         try {
             address = getAddress(yArgs.address);
+            if (!isAddress(address, { strict: true })) {
+                console.error("Address malformed");
+                process.exit(1);
+            }
         }
         catch (e) {
             console.error(e.message);
