@@ -11,14 +11,14 @@ use sha3::{Digest, Keccak256};
 use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8");
+declare_id!("7LBe4g8Q6hq8Sk1nT8tQUiz2mCHjsoQJbmZ7zCQtutuT");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
-const SUPERHASH_X: u16 = 500;
+const SUPERHASH_X: u16 = 250;
 const AMP_START: u16 = 300;
-const AMP_CYCLE_SLOTS: u64 = 100;
+const AMP_CYCLE_SLOTS: u64 = 5_000;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -77,13 +77,12 @@ pub mod sol_xen {
 
     pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount) -> Result<()> {
 
-        msg!("Global txs check: {}", ctx.accounts.global_xn_record.txs);
-
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
         
+        print!("Using slot #{}", slot);
+
         require!(slot > 0, SolXenError::ZeroSlotValue);
-        // require!(ctx.accounts.global_xn_record.amp > 0, SolXenError::MintIsNotActive);
 
         // update global AMP state if required
         if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS && ctx.accounts.global_xn_record.amp > 0 {
@@ -93,10 +92,12 @@ pub mod sol_xen {
 
         // Find hashes
         let nonce = ctx.accounts.global_xn_record.nonce;
+        print!("Hello nonce {:?}", nonce);
+
         let (hashes, superhashes) = find_hashes(slot, nonce);
 
         // Calculate solXEN tokens
-        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64) 
+        let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64)
             + 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (SUPERHASH_X as u64) * (superhashes as u64);
 
         // Mint solXEN tokens to user
@@ -116,10 +117,15 @@ pub mod sol_xen {
             )?;
         }
 
-        // Update user points
-        ctx.accounts.user_xn_record.hashes += hashes as u64;
-        ctx.accounts.user_xn_record.superhashes += superhashes as u64;
-        
+        // Update user points by eth address
+        ctx.accounts.xn_by_eth.hashes += hashes as u64;
+        ctx.accounts.xn_by_eth.superhashes += superhashes as u32;
+
+        // Update user points by sol address
+        ctx.accounts.xn_by_sol.hashes += hashes as u64;
+        ctx.accounts.xn_by_sol.superhashes += superhashes as u32;
+        ctx.accounts.xn_by_sol.points += points as u128;
+
         // Update global points
         ctx.accounts.global_xn_record.hashes += hashes as u64;
         ctx.accounts.global_xn_record.superhashes += superhashes as u64;
@@ -198,7 +204,7 @@ pub struct MintTokens<'info> {
         associated_token::mint = mint_account,
         associated_token::authority = user,
     )]
-    pub user_token_account: Account<'info, TokenAccount>,
+    pub user_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         seeds = [b"xn-global-counter"],
@@ -207,15 +213,26 @@ pub struct MintTokens<'info> {
     pub global_xn_record: Box<Account<'info, GlobalXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserXnRecord>(),
+        space = 8 + size_of::<UserEthXnRecord>(),
         payer = user,
         seeds = [
-            b"sol-xen",
+            b"xn-by-eth",
             _eth_account.address.as_ref(),
         ],
         bump
     )]
-    pub user_xn_record: Box<Account<'info, UserXnRecord>>,
+    pub xn_by_eth: Box<Account<'info, UserEthXnRecord>>,
+    #[account(
+        init_if_needed,
+        space = 8 + size_of::<UserSolXnRecord>(),
+        payer = user,
+        seeds = [
+            b"xn-by-sol",
+            user.key().as_ref(),
+        ],
+        bump
+    )]
+    pub xn_by_sol: Box<Account<'info, UserSolXnRecord>>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"mint"], bump)]
@@ -223,14 +240,22 @@ pub struct MintTokens<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-    pub rent: Sysvar<'info, Rent>,
+    // pub rent: Sysvar<'info, Rent>,
 }
 
 #[account]
 #[derive(InitSpace)]
-pub struct UserXnRecord {
+pub struct UserEthXnRecord {
     pub hashes: u64,
-    pub superhashes: u64
+    pub superhashes: u32,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct UserSolXnRecord {
+    pub hashes: u64,
+    pub superhashes: u32,
+    pub points: u128
 }
 
 #[account]
@@ -264,6 +289,9 @@ pub fn find_hashes(slot: u64, nonce: [u8; 4]) -> (u8, u8) {
             msg!("Found '{}' in hash at iteration {}: {}", HASH_PATTERN, i, hex_string);
             hashes += 1;
         }
+    }
+    if superhashes == 0 && hashes == 0 {
+        msg!("Found zero targets in hashes after {} iterations", MAX_HASHES);
     }
     return (hashes, superhashes);
 }

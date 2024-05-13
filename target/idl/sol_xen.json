@@ -1,5 +1,5 @@
 {
-  "address": "9c17DFJhKFJx1jk6rqyobHUSXZCTmEoc9N44HQu14Hh8",
+  "address": "7LBe4g8Q6hq8Sk1nT8tQUiz2mCHjsoQJbmZ7zCQtutuT",
   "metadata": {
     "name": "sol_xen",
     "version": "0.1.0",
@@ -152,25 +152,53 @@
           }
         },
         {
-          "name": "user_xn_record",
+          "name": "xn_by_eth",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  111,
-                  108,
-                  45,
                   120,
+                  110,
+                  45,
+                  98,
+                  121,
+                  45,
                   101,
-                  110
+                  116,
+                  104
                 ]
               },
               {
                 "kind": "arg",
                 "path": "_eth_account.address"
+              }
+            ]
+          }
+        },
+        {
+          "name": "xn_by_sol",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  98,
+                  121,
+                  45,
+                  115,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
               }
             ]
           }
@@ -208,10 +236,6 @@
         {
           "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "rent",
-          "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
       "args": [
@@ -241,16 +265,29 @@
       ]
     },
     {
-      "name": "UserXnRecord",
+      "name": "UserEthXnRecord",
       "discriminator": [
+        224,
+        152,
+        129,
         49,
-        253,
-        198,
-        222,
-        235,
-        109,
-        119,
-        115
+        149,
+        104,
+        210,
+        196
+      ]
+    },
+    {
+      "name": "UserSolXnRecord",
+      "discriminator": [
+        105,
+        200,
+        79,
+        162,
+        225,
+        52,
+        172,
+        238
       ]
     }
   ],
@@ -403,7 +440,7 @@
       }
     },
     {
-      "name": "UserXnRecord",
+      "name": "UserEthXnRecord",
       "type": {
         "kind": "struct",
         "fields": [
@@ -413,7 +450,27 @@
           },
           {
             "name": "superhashes",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserSolXnRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "hashes",
             "type": "u64"
+          },
+          {
+            "name": "superhashes",
+            "type": "u32"
+          },
+          {
+            "name": "points",
+            "type": "u128"
           }
         ]
       }

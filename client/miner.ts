@@ -1,10 +1,9 @@
 import dotenv from 'dotenv';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
-import { getAddress } from 'viem';
-//import { debug } from 'debug';
-import pkg from 'debug';
-const { debug } = pkg;
+import { getAddress, isAddress } from 'viem';
+import readline from 'readline'
+
 import {ComputeBudgetProgram, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
@@ -13,7 +12,6 @@ import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {SolXen} from '../target/types/sol_xen';
 
 dotenv.config();
-debug.enable(process.env.DEBUG || '*')
 
 enum Cmd {
     Mine = 'mine',
@@ -22,12 +20,12 @@ enum Cmd {
 
 const G = '\x1b[32m';
 const Y = '\x1b[33m';
+const U = '\x1b[39m';
 
 async function main() {
-    const log = debug("sol-xen")
-    const error = debug("sol-xen:error")
-    const [, , , ...params] = process.argv;
+    // PARSE CLI ARGS
 
+    const [, , , ...params] = process.argv;
     let cmd: Cmd;
     let address: string = '';
     let priorityFee: number = 1;
@@ -86,14 +84,20 @@ async function main() {
     if (yArgs.address) {
         try {
             address = getAddress(yArgs.address)
+            if (!isAddress(address, { strict: true })) {
+                console.error("Address malformed")
+                process.exit(1)
+            }
         } catch (e: any) {
             console.error(e.message);
             process.exit(1)
         }
     }
 
+    // SETUP SOLANA ENVIRONMENT
+
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
-    log(`${G}Running on ${network}`)
+    console.log(`\nRunning on ${G}${network}${U}`)
     const connection = new web3.Connection(network, 'processed');
 
     // Load user wallet keypair
@@ -102,7 +106,7 @@ async function main() {
         const userKeyPairFileName = process.env.USER_WALLET;
         const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
         user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
-        log(`${G}Using user wallet ${user.publicKey.toBase58()}`);
+        console.log(`Using user wallet ${G}${user.publicKey.toBase58()}${U}`);
     } else {
         console.error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file')
         process.exit(1);
@@ -119,12 +123,12 @@ async function main() {
     setProvider(provider);
 
     // check balance
-    log(`${G}Block height=${await connection.getBlockHeight()}`);
-    log(`${G}SOL balance=${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}`);
+    console.log(`Block height=${G}${await connection.getBlockHeight()}${U}`);
+    console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
 
     // Load the program
     const program = workspace.SolXen as Program<SolXen>;
-    log(`${G}Program ID=${program.programId}`);
+    console.log(`Program ID=${G}${program.programId}${U}`);
 
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
         [
@@ -134,10 +138,18 @@ async function main() {
     );
 
     const ethAddress20 = Buffer.from(address.slice(2), 'hex')
-    const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
+    const [userEthXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
         [
-            Buffer.from("sol-xen"),
+            Buffer.from("xn-by-eth"),
             ethAddress20,
+        ],
+        program.programId
+    );
+
+    const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("xn-by-sol"),
+            user.publicKey.toBuffer(),
         ],
         program.programId
     );
@@ -154,23 +166,26 @@ async function main() {
         owner: user.publicKey
     })
 
+
+    // PROCESS COMMANDS
+
     if (cmd === Cmd.Balance) {
 
         const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        log(`${G}Global state: txs=${globalXnRecord.txs}, hashes=${globalXnRecord.hashes}, superhashes=${globalXnRecord.superhashes}, supply=${totalSupply.value.uiAmount}, amp=${globalXnRecord.amp}`)
+        console.log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`)
 
         if (address) {
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`${G}User state: hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${userTokenBalance.value.uiAmount}`)
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
+            console.log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`)
         } else {
-            log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
+            console.log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
         }
     } else if (cmd === Cmd.Mine) {
 
-        log(`${G}Running miner with params: cmd=${cmd}, address=${address}, priorityFee=${priorityFee}, runs=${runs}`);
-        log(`${G}Using CU max=${units}`);
+        console.log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}`);
+        console.log(`Using CU max=${G}${units}${U}`);
         const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
             units
         });
@@ -179,6 +194,7 @@ async function main() {
         });
 
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
+        let currentRun = 1;
 
         for (let run = 1; run <= runs; run++) {
 
@@ -188,7 +204,8 @@ async function main() {
                 user: user.publicKey,
                 mintAccount: mintAccount.address,
                 userTokenAccount,
-                userXnRecord: userXnRecordAccount,
+                xnByEth: userEthXnRecordAccount,
+                xnBySol: userSolXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 associateTokenProgram
@@ -197,15 +214,34 @@ async function main() {
                 .accounts(mintAccounts)
                 .signers([user])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
-                .rpc();
+                .rpc({ commitment: "processed", skipPreflight: true });
+
+            // connection.onSignature(mintTx, (...params) => {
+            //    readline.moveCursor(process.stdout, 0, run - currentRun);
+            //    readline.cursorTo(process.stdout, 1);
+            //    process.stdout.write(`.`);
+            //    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+            // }, 'confirmed')
+            connection.onSignature(mintTx, (...params) => {
+                readline.moveCursor(process.stdout, 0, run - currentRun);
+                readline.cursorTo(process.stdout, 1);
+                process.stdout.write(`X`);
+                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                console.log();
+                if (run === runs) {
+                    process.exit(0);
+                }
+            }, 'finalized')
 
             const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            const userXnRecord = await program.account.userXnRecord.fetch(userXnRecordAccount);
-            log(`${Y}Tx=${mintTx}, nonce=${Buffer.from(globalXnRecordNew.nonce).toString("hex")} hashes=${userXnRecord.hashes}, superhashes=${userXnRecord.superhashes}, balance=${(userTokenBalance.value.uiAmount ||0).toLocaleString()} supply=${(totalSupply.value.uiAmount || 0).toLocaleString()}`);
+            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
+            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount ||0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}\n`);
+            currentRun++;
         }
+        await new Promise(resolve => setTimeout(resolve, 30_000))
     } else {
-        error('Unknown command:', cmd)
+        console.error('Unknown command:', cmd)
         process.exit(1)
     }
 

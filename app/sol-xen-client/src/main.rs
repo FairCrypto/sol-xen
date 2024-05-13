@@ -18,6 +18,8 @@ use borsh::{BorshSerialize, BorshDeserialize, to_vec, BorshSchema};
 use ethaddr::Address;
 use colored::*;
 use dotenv::dotenv;
+use std::thread;
+use std::time::Duration;
 
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
@@ -58,7 +60,15 @@ pub struct BoxedGlobalXnRecord {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema)]
-pub struct UserXnRecord {
+pub struct UserEthXnRecord {
+    pub hashes: u64,
+    pub superhashes: u32,
+} // 16 == 16
+
+#[derive(BorshSerialize, BorshDeserialize, BorshSchema)]
+pub struct UserSolXnRecord {
+    pub hashes: u64,
+    pub superhashes: u32,
     pub points: u128, // 16
 } // 16 == 16
 
@@ -117,10 +127,17 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
         &program_id
     );
 
-    let (user_xn_record_pda, _user_bump) = Pubkey::find_program_address(
+    let (user_eth_xn_record_pda, _user_bump) = Pubkey::find_program_address(
         &[
-            b"sol-xen",
-            &address.as_slice(),
+            b"xn-by-eth",
+            &address.as_slice()
+        ],
+        &program_id
+    );
+
+    let (user_sol_xn_record_pda, _user_bump) = Pubkey::find_program_address(
+        &[
+            b"xn-by-sol",
             &payer.pubkey().to_bytes()
         ],
         &program_id
@@ -156,7 +173,8 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
             accounts: vec![
                 AccountMeta::new(user_token_account, false),
                 AccountMeta::new(global_xn_record_pda, false),
-                AccountMeta::new(user_xn_record_pda, false),
+                AccountMeta::new(user_eth_xn_record_pda, false),
+                AccountMeta::new(user_sol_xn_record_pda, false),
                 AccountMeta::new(payer.pubkey(), true),
                 AccountMeta::new(mint_pda, false),
                 AccountMeta::new_readonly(spl_token::ID, false),
@@ -184,15 +202,17 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
 
         match result {
             Ok(signature) => {
-                let maybe_user_account_data_raw = client.get_account_data(&user_xn_record_pda);
+                let maybe_user_account_data_raw = client.get_account_data(&user_eth_xn_record_pda);
                 match maybe_user_account_data_raw { 
                     Ok(user_account_data_raw) => {
-                        let user_data: [u8; size_of::<UserXnRecord>()] = user_account_data_raw.as_slice()[8..].try_into().unwrap();
-                        let user_state = UserXnRecord::try_from_slice(user_data.as_ref()).unwrap();
+                        let user_data: [u8; size_of::<UserEthXnRecord>() - 4] = user_account_data_raw.as_slice()[8..20].try_into().unwrap();
+                        let user_state = UserEthXnRecord::try_from_slice(user_data.as_ref()).unwrap();
                         println!(
-                            "Tx={}, points={}, amp={}",
+                            "Tx={}, hashes={}, superhashes={}, amp={}",
                             signature.to_string().yellow(),
-                            (user_state.points / 1_000_000_000).to_string().yellow(),
+                            (user_state.hashes).to_string().yellow(),
+                            (user_state.superhashes).to_string().yellow(),
+                            // (user_state.points / 1_000_000_000).to_string().yellow(),
                             global_state.amp.to_string().yellow()
                         )
                     }
@@ -202,6 +222,7 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
             },
             Err(err) => println!("Failed: {:?}", err),
         };
+        thread::sleep(Duration::from_secs(5));
     }
 
 }
