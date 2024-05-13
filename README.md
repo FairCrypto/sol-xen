@@ -51,7 +51,48 @@ or even without .env file
 
 ```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export DEBUG=* && node ./client/miner.js mine --address <ethereum address> -fee 1```
 
-
+## One-input installation of the solXEN miner
+### Install Rust, Solana, create and fund a wallet on Solana, install NodeJS and run the miner
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+sh -c "$(curl -sSfL https://release.solana.com/stable/install)" && \
+export PATH="~/.local/share/solana/install/active_release/bin:$PATH" && \
+solana-keygen new --force --no-passphrase && \
+solana config set --url https://api.devnet.solana.com && \
+solana airdrop 1 && \
+git clone https://github.com/FairCrypto/sol-xen.git && \
+cd sol-xen && \
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
+source ~/.bashrc && \
+nvm install --lts && \
+export USER_WALLET="$HOME/.config/solana/id.json" && \
+export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && \
+export DEBUG=* && \
+npm install dotenv && \
+npm install -g dotenv && \
+read -p "Enter your Ethereum address: " ethereum_address && \
+read -p "Enter the number of runs: " num_runs && \
+read -p "Enter the fee: " fee && \
+node ./client/miner.js mine --address "$ethereum_address" -fee "$fee" -r "$num_runs"
+```
+N.B. if there's "Error: airdrop request failed" it means that the faucet is empty. 
+It's necessary to copy the public key and use another faucet (eg. https://faucet.solana.com) and then continue with the installation.
+```
+git clone https://github.com/FairCrypto/sol-xen.git && \
+cd sol-xen && \
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
+source ~/.bashrc && \
+nvm install --lts && \
+export USER_WALLET="$HOME/.config/solana/id.json" && \
+export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && \
+export DEBUG=* && \
+npm install dotenv && \
+npm install -g dotenv && \
+read -p "Enter your Ethereum address: " ethereum_address && \
+read -p "Enter the number of runs: " num_runs && \
+read -p "Enter the fee: " fee && \
+node ./client/miner.js mine --address "$ethereum_address" -fee "$fee" -r "$num_runs"
+```
 Full options list
 
 ```
