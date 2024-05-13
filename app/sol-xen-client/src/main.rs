@@ -18,6 +18,8 @@ use borsh::{BorshSerialize, BorshDeserialize, to_vec, BorshSchema};
 use ethaddr::Address;
 use colored::*;
 use dotenv::dotenv;
+use std::thread;
+use std::time::Duration;
 
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
@@ -220,6 +222,7 @@ fn execute_transactions(ethereum_address: String, address: [u8; 20], priority_fe
             },
             Err(err) => println!("Failed: {:?}", err),
         };
+        thread::sleep(Duration::from_secs(5));
     }
 
 }
