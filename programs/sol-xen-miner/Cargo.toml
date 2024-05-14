@@ -1,0 +1,27 @@
+[package]
+name = "sol-xen-miner"
+version = "0.1.0-epsilon"
+description = "solXEN Miner Program. Search for hash patterns, earn points"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sol_xen_miner"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.30.0", features = ["init-if-needed"] }
+anchor-spl = { version = "0.30.0", features = ["metadata"] }
+solana-program = "1.18.11"
+sha3 = "0.10.8"
+byteorder = "1.5.0"
+# borsh = "1.4.0"
+hex = "0.4.3"
+# mpl-token-metadata = "4.1.2"

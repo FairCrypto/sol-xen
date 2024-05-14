@@ -83,7 +83,7 @@ async function main() {
 
         const [userXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
             [
-                Buffer.from("sol-xen"),
+                Buffer.from("sol-xen-miner"),
                 ethAddress20,
             ],
             program.programId

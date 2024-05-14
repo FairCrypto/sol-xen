@@ -1,23 +1,23 @@
 {
-  "address": "7LBe4g8Q6hq8Sk1nT8tQUiz2mCHjsoQJbmZ7zCQtutuT",
+  "address": "8gRU8xFGQY5ufvvrAWWfxxoBgHFU4K7q98ibHNMsg3Sq",
   "metadata": {
-    "name": "sol_xen",
-    "version": "0.1.0",
+    "name": "sol_xen_miner",
+    "version": "0.1.0-epsilon",
     "spec": "0.1.0",
-    "description": "Created with Anchor"
+    "description": "solXEN Miner Program. Search for hash patterns, earn points"
   },
   "instructions": [
     {
-      "name": "create_mint",
+      "name": "init_miner",
       "discriminator": [
-        69,
-        44,
-        215,
-        132,
-        253,
-        214,
-        41,
-        45
+        144,
+        159,
+        202,
+        208,
+        234,
+        154,
+        242,
+        55
       ],
       "accounts": [
         {
@@ -36,53 +36,26 @@
                   120,
                   110,
                   45,
+                  109,
+                  105,
+                  110,
+                  101,
+                  114,
+                  45,
                   103,
                   108,
                   111,
                   98,
                   97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  101,
-                  114
+                  108
                 ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
+              },
               {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116
-                ]
+                "kind": "arg",
+                "path": "kind"
               }
             ]
           }
-        },
-        {
-          "name": "metadata",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "token_metadata_program",
-          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
         {
           "name": "system_program",
@@ -95,32 +68,24 @@
       ],
       "args": [
         {
-          "name": "metadata",
-          "type": {
-            "defined": {
-              "name": "InitTokenParams"
-            }
-          }
+          "name": "kind",
+          "type": "u8"
         }
       ]
     },
     {
-      "name": "mint_tokens",
+      "name": "mine_hashes",
       "discriminator": [
-        59,
-        132,
-        24,
-        246,
-        122,
-        39,
-        8,
-        243
+        192,
+        6,
+        168,
+        29,
+        123,
+        183,
+        150,
+        48
       ],
       "accounts": [
-        {
-          "name": "user_token_account",
-          "writable": true
-        },
         {
           "name": "global_xn_record",
           "writable": true,
@@ -132,21 +97,23 @@
                   120,
                   110,
                   45,
+                  109,
+                  105,
+                  110,
+                  101,
+                  114,
+                  45,
                   103,
                   108,
                   111,
                   98,
                   97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  101,
-                  114
+                  108
                 ]
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
               }
             ]
           }
@@ -173,6 +140,10 @@
               {
                 "kind": "arg",
                 "path": "_eth_account.address"
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
               }
             ]
           }
@@ -199,6 +170,10 @@
               {
                 "kind": "account",
                 "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
               }
             ]
           }
@@ -209,33 +184,8 @@
           "signer": true
         },
         {
-          "name": "mint_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
@@ -246,6 +196,10 @@
               "name": "EthAccount"
             }
           }
+        },
+        {
+          "name": "_kind",
+          "type": "u8"
         }
       ]
     }
@@ -321,6 +275,11 @@
       "code": 6002,
       "name": "ZeroSlotValue",
       "msg": "Slot value is Zero"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidMinerKind",
+      "msg": "Invalid miner kind"
     }
   ],
   "types": [
@@ -355,18 +314,6 @@
             "type": "u64"
           },
           {
-            "name": "hashes",
-            "type": "u64"
-          },
-          {
-            "name": "superhashes",
-            "type": "u64"
-          },
-          {
-            "name": "txs",
-            "type": "u64"
-          },
-          {
             "name": "nonce",
             "type": {
               "array": [
@@ -374,6 +321,10 @@
                 4
               ]
             }
+          },
+          {
+            "name": "kind",
+            "type": "u8"
           }
         ]
       }
@@ -411,30 +362,6 @@
           {
             "name": "points",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "InitTokenParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "symbol",
-            "type": "string"
-          },
-          {
-            "name": "uri",
-            "type": "string"
-          },
-          {
-            "name": "decimals",
-            "type": "u8"
           }
         ]
       }
