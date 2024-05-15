@@ -7,11 +7,10 @@ use anchor_spl::{
     token::{mint_to},
     associated_token::AssociatedToken,
 };
-// use std::mem::size_of;
 use mpl_token_metadata::{types::DataV2};
 use sol_xen_miner::UserSolXnRecord;
 
-declare_id!("C3GMrm3VR3W9MYRF3iK3JyCtiwAc5m3pyUmgSXQgK52X");
+declare_id!("JAdTsCgmXdg36Y2cgfz5EMag5QbXn2tu2tGXbxm2jyz5");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -20,8 +19,9 @@ declare_id!("C3GMrm3VR3W9MYRF3iK3JyCtiwAc5m3pyUmgSXQgK52X");
 pub mod sol_xen_minter {
     use super::*;
 
-    pub fn create_mint(ctx: Context<InitTokenMint>, metadata: InitTokenParams) -> Result<()> {
+    pub fn create_mint(_ctx: Context<InitTokenMint>, _metadata: InitTokenParams) -> Result<()> {
 
+        /*
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
         let signer = [&seeds[..]];
 
@@ -56,32 +56,24 @@ pub mod sol_xen_minter {
             true,
             None,
         )?;
-
+        */
         Ok(())
     }
 
-    pub fn mint_tokens(ctx: Context<MintTokens>) -> Result<()> {
-
-        // require!(ctx.remaining_accounts.get(0).unwrap().owner.key() == *ctx.accounts.user.key, SolXenError::BadOwner);
-        // require!(ctx.remaining_accounts.get(1).unwrap().owner.key() == *ctx.accounts.user.key, SolXenError::BadOwner);
-        // require!(ctx.remaining_accounts.get(2).unwrap().owner.key() == *ctx.accounts.user.key, SolXenError::BadOwner);
-        // require!(ctx.remaining_accounts.get(3).unwrap().owner.key() == *ctx.accounts.user.key, SolXenError::BadOwner);
+    pub fn mint_tokens(ctx: Context<MintTokens>, _kind: u8, _minter_program_key: Pubkey) -> Result<()> {
         
-        let mut points = 0u64;
-        points += ctx.accounts.user_record_0.points as u64;
-        points += ctx.accounts.user_record_1.points as u64;
-        points += ctx.accounts.user_record_2.points as u64;
-        points += ctx.accounts.user_record_3.points as u64;
-        
+        let points = ctx.accounts.user_record.points as u64;
         print!("Total points {} for {}", points, ctx.accounts.user.key.to_string());
 
-        let token_account_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
-        let current_token_balance = ctx.accounts.user_token_account.amount;
-
+        let current_token_balance = ctx.accounts.user_tokens_record.tokens_minted as u64;
         print!("Current balance {} for {}", current_token_balance, ctx.accounts.user.key.to_string());
-
-        // Mint solXEN tokens to user
+        
+        let token_account_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
         if points > current_token_balance {
+            // increment minted counter for user
+            ctx.accounts.user_tokens_record.tokens_minted += (points - current_token_balance) as u128;
+            
+            // Mint solXEN tokens to user
             mint_to(
                 CpiContext::new_with_signer(
                     ctx.accounts.token_program.to_account_info(),
@@ -120,10 +112,10 @@ pub struct InitTokenMint<'info> {
     )]
     pub mint_account: Account<'info, Mint>,
     /// CHECK: Address validated using constraint
-    #[account(mut)]
-    pub metadata: UncheckedAccount<'info>,
+    // #[account(mut)]
+    // pub metadata: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
-    pub token_metadata_program: Program<'info, Metadata>,
+    // pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -137,42 +129,31 @@ pub struct InitTokenParams {
 }
 
 #[derive(Accounts)]
+#[instruction(_kind: u8, _minter_program_key: Pubkey)]
 pub struct MintTokens<'info> {
     #[account(
         seeds = [
             b"xn-by-sol",
             user.key().as_ref(),
-            0u8.to_be_bytes().as_slice()        ], 
+            _kind.to_be_bytes().as_ref(),
+            _minter_program_key.as_ref()
+        ],
+        // owner = _minter_program_key,
+        seeds::program = _minter_program_key,
         bump
     )]
-    pub user_record_0: Box<Account<'info, UserSolXnRecord>>,
+    pub user_record: Box<Account<'info, UserSolXnRecord>>,
     #[account(
+        init_if_needed,
         seeds = [
-            b"xn-by-sol",
-            user.key().as_ref(),
-            1u8.to_be_bytes().as_slice()
-            ],
-        bump
-    )]    
-    pub user_record_1: Box<Account<'info, UserSolXnRecord>>,
-    #[account(
-        seeds = [
-            b"xn-by-sol",
-            user.key().as_ref(),
-            2u8.to_be_bytes().as_slice() 
+            b"sol-xen-minted",
+            user.key().as_ref()
         ],
+        payer = user,
+        space = 8 + UserTokensRecord::INIT_SPACE,
         bump
-    )]    
-    pub user_record_2: Box<Account<'info, UserSolXnRecord>>,
-    #[account(
-        seeds = [
-            b"xn-by-sol",
-            user.key().as_ref(),
-            3u8.to_be_bytes().as_slice()         
-        ],
-        bump
-    )]    
-    pub user_record_3: Box<Account<'info, UserSolXnRecord>>,
+    )]
+    pub user_tokens_record: Box<Account<'info, UserTokensRecord>>,
     #[account(
         init_if_needed,
         payer = user,
@@ -187,7 +168,14 @@ pub struct MintTokens<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    // pub minter_program: Program<'info, SolXenMiner>,
     // pub rent: Sysvar<'info, Rent>,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct UserTokensRecord {
+    pub tokens_minted: u128
 }
 
 #[error_code]

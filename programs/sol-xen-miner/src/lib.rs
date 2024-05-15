@@ -2,9 +2,8 @@ use anchor_lang::{
     prelude::*,
 };
 use sha3::{Digest, Keccak256};
-use std::mem::size_of;
 
-declare_id!("8gRU8xFGQY5ufvvrAWWfxxoBgHFU4K7q98ibHNMsg3Sq");
+declare_id!("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -105,7 +104,7 @@ pub struct InitMiner<'info> {
     pub admin: Signer<'info>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<GlobalXnRecord>(),
+        space = 8 + GlobalXnRecord::INIT_SPACE,
         seeds = [b"xn-miner-global", kind.to_be_bytes().as_slice()],
         bump,
         payer = admin,
@@ -126,24 +125,26 @@ pub struct MineHashes<'info> {
     pub global_xn_record: Box<Account<'info, GlobalXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserEthXnRecord>(),
+        space = 8 + UserEthXnRecord::INIT_SPACE,
         payer = user,
         seeds = [
             b"xn-by-eth",
             _eth_account.address.as_ref(),
-            kind.to_be_bytes().as_slice()
+            kind.to_be_bytes().as_slice(),
+            ID.as_ref(),
         ],
         bump
     )]
     pub xn_by_eth: Box<Account<'info, UserEthXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserSolXnRecord>(),
+        space = 8 + UserSolXnRecord::INIT_SPACE,
         payer = user,
         seeds = [
             b"xn-by-sol",
             user.key().as_ref(),
-            kind.to_be_bytes().as_slice()
+            kind.to_be_bytes().as_slice(),
+            ID.as_ref(),
         ],
         bump
     )]
@@ -231,5 +232,3 @@ pub enum SolXenError {
     #[msg("Invalid miner kind")]
     InvalidMinerKind
 }
-
-

@@ -34,6 +34,7 @@ async function main() {
 
     // Load the program
     const program = workspace.SolXenMinter as Program<SolXenMinter>;
+    console.log('Program ID:', program.programId.toBase58());
 
     const METADATA_SEED = "metadata";
     const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
@@ -55,7 +56,7 @@ async function main() {
 
     const createAccounts = {
         admin: provider.wallet.publicKey,
-        metadata: metadataAddress,
+        // metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
     };
 
