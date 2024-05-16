@@ -33,7 +33,33 @@ N.B. you can skip the last one and run only JS files (see below)
 USER_WALLET=<path_to_solana_wallet_file (id.json)>
 ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
 DEBUG=*
+
+PROGRAM_ID_MINER=Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW # one of 4 miners
+
+PROGRAM_ID_MINTER=3JSyo6R489DcXedDYQUY7XbGXsmCz4mQH7sWeK5VE8vA
 ```
+
+## ⚠ Breaking Changes [Epsilon Build] ⚠
+
+To enable multi-threaded mining, Miner and Minter Solana programs have been separated.
+
+### Miner Program
+
+Searches for hash patterns and accumulates `hashes`, `superhashes` and `points` counters for a user.
+
+There are [up to] 4 kinds of Miner program active simultaneously.
+
+Each miner client (TS/JS or a Rust one) communicates with only one Miner program, selected via --kind or -k param (0...3)
+
+### Minter Program
+
+Minter program converts `points` accumulated by looking for hash/superhash patterns into solXEN tokens.
+
+User can run Minter program at any time, frequency of usage will get no different result for tokens minting.
+
+You can convert `points` only related to a single Miner program at a time. So if you have points with all 4 Miner programs, you'll have to run Minter at least 4 times to convert all `points`.
+
+Like with Miner, you'll need to indicate it's kind via --kind or -k param (0...3)
 
 ## Usage
 
@@ -41,15 +67,31 @@ DEBUG=*
 
 with typescript
 
-```tsx ./client/miner.ts mine --address <ethereum address> -fee 1```
+```tsx ./client/miner.ts mine --address <ethereum address> -f 1 -k 0``` // N.B.: -k (--kind) param could be 0..3
 
 or without it
 
-```node ./client/miner.js mine --address <ethereum address> -fee 1```
+```node ./client/miner.js mine --address <ethereum address> -f 1 -k 0``` // N.B.: -k (--kind) param could be 0..3
 
 or even without .env file
 
-```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export DEBUG=* && node ./client/miner.js mine --address <ethereum address> -fee 1```
+```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export DEBUG=* && node ./client/miner.js mine --address <ethereum address> -f 1 -k 0```
+
+### Run minter script
+
+⚠️ You'll need to supply additional PROGRAM_ID_MINER param
+
+with typescript
+
+```tsx ./client/minter.ts mint -f 1 -k 0``` // N.B.: -k (--kind) param could be 0..3
+
+or without it
+
+```node ./client/minter.js mint -f 1 -k 0``` // N.B.: -k (--kind) param could be 0..3
+
+or even without .env file
+
+```export USER_WALLET='/path/to/your/solana/wallet/id.json' && export ANCHOR_PROVIDER_URL='https://api.devnet.solana.com' && export DEBUG=* && export PROGRAM_ID_MINER=... && node ./client/minter.js mint -f 1 -k 0```
 
 ## One-input installation of the solXEN miner
 ### Install Rust, Solana, create and fund a wallet on Solana, install NodeJS and run the miner
