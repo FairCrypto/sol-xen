@@ -212,7 +212,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
             client.get_latest_blockhash().unwrap(),
         );
 
-        let result = client.send_and_confirm_transaction(&transaction);
+        let result = client.send_transaction(&transaction);
         match result {
             Ok(signature) => {
                 let maybe_user_account_data_raw = client.get_account_data(&user_eth_xn_record_pda);
@@ -220,13 +220,25 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
                     Ok(user_account_data_raw) => {
                         let user_data: [u8; size_of::<UserEthXnRecord>() - 4] = user_account_data_raw.as_slice()[8..20].try_into().unwrap();
                         let user_state = UserEthXnRecord::try_from_slice(user_data.as_ref()).unwrap();
-                        println!(
-                            "Tx={}, hashes={}, superhashes={}",
-                            signature.to_string().yellow(),
-                            (user_state.hashes).to_string().yellow(),
-                            (user_state.superhashes).to_string().yellow(),
-                            // (user_state.points / 1_000_000_000).to_string().yellow(),
-                        )
+
+                        let maybe_user_sol_account_data_raw = client.get_account_data(&user_sol_xn_record_pda);
+                        match maybe_user_sol_account_data_raw {
+                            Ok(user_sol_account_data_raw) => {
+                                // 36 32 28
+                                // println!("{} {}", user_sol_account_data_raw.len(), size_of::<UserSolXnRecord>());
+                                let user_sol_data: [u8; size_of::<UserSolXnRecord>() - 4] = user_sol_account_data_raw.as_slice()[8..].try_into().unwrap();
+                                let user_sol_state = UserSolXnRecord::try_from_slice(user_sol_data.as_ref()).unwrap();
+                                println!(
+                                    "Tx={}, hashes={}, superhashes={}, points={}",
+                                    signature.to_string().yellow(),
+                                    user_state.hashes.to_string().yellow(),
+                                    user_state.superhashes.to_string().yellow(),
+                                    (user_sol_state.points / 1_000_000_000).to_string().yellow(),
+                                )
+                            }
+                            Err(_) => println!("Account data not yet ready; skipping")
+                        }
+                        
                     }
                     Err(_) => println!("Account data not yet ready; skipping")
                 }
@@ -276,12 +288,6 @@ fn do_mint(priority_fee: u64, kind: u8) {
     );
     println!("User token record PDA={} bump={}", user_token_record_pda.to_string().green(), _user_rec_bump.to_string());
 
-    let (miners_pda, _miners_bump) = Pubkey::find_program_address(
-        &[b"sol-xen-miners"],
-        &program_id_minter
-    );
-    println!("Miners PDA={}", miners_pda.to_string().green());
-
     let (mint_pda, _mint_bump) = Pubkey::find_program_address(
         &[b"mint"],
         &program_id_minter
@@ -310,7 +316,6 @@ fn do_mint(priority_fee: u64, kind: u8) {
             AccountMeta::new_readonly(user_sol_xn_record_pda, false),
             AccountMeta::new(user_token_record_pda, false),
             AccountMeta::new(user_token_account, false),
-            AccountMeta::new(miners_pda, false),
             AccountMeta::new_readonly(payer.pubkey(), true),
             AccountMeta::new(mint_pda, false),
             AccountMeta::new_readonly(spl_token::ID, false),
@@ -334,7 +339,7 @@ fn do_mint(priority_fee: u64, kind: u8) {
         client.get_latest_blockhash().unwrap(),
     );
 
-    let result = client.send_transaction(&transaction);
+    let result = client.send_and_confirm_transaction_with_spinner(&transaction);
 
     match result {
         Ok(signature) => {

@@ -44,14 +44,6 @@ async function main() {
         program.programId
     );
 
-    const [minersAddress] = web3.PublicKey.findProgramAddressSync(
-        [
-            Buffer.from("sol-xen-miners"),
-            provider.wallet.publicKey.toBuffer()
-        ],
-        program.programId
-    );
-
     const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
         [
             Buffer.from(METADATA_SEED),
@@ -63,7 +55,6 @@ async function main() {
 
     const createAccounts = {
         admin: provider.wallet.publicKey,
-        miners: minersAddress,
         // metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
     };
@@ -74,16 +65,10 @@ async function main() {
         uri: "",
         decimals: 9,
     }
-    const miners: PublicKey[] = [
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER0 || ''),
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER1 || ''),
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER2 || ''),
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER3 || ''),
-    ]
 
     // Send the mint transaction (as Admin)
 
-    const hash = await program.methods.createMint(metadata, miners)
+    const hash = await program.methods.createMint(metadata)
         .accounts(createAccounts)
         .signers([])
         .rpc();
@@ -92,25 +77,6 @@ async function main() {
     const mintAccount = await getMint(provider.connection, mint);
     console.log(mintAccount.address.toBase58())
 
-    /*
-    const addMinersAccounts = {
-        admin: provider.wallet.publicKey,
-        miners: minersAddress,
-    };
-    const miners2: PublicKey[] = [
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER0 || ''),
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER1 || ''),
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER2 || ''),
-        // new web3.PublicKey(process.env.PROGRAM_ID_MINER3 || ''),
-    ]
-
-    // Send the mint transaction (as Admin)
-    const hash1 = await program.methods.addMiners(miners2)
-        .accounts(addMinersAccounts)
-        .signers([])
-        .rpc();
-    console.log('Add Miners tx hash', hash1)
-    */
 }
 
 main().then(() => console.log('Done'))

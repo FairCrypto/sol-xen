@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("AAE65RXrFA8EDkyWPHGWTQZ1hGmYyswvCFnC9w6zT2k9");
+declare_id!("3JSyo6R489DcXedDYQUY7XbGXsmCz4mQH7sWeK5VE8vA");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -18,11 +18,7 @@ declare_id!("AAE65RXrFA8EDkyWPHGWTQZ1hGmYyswvCFnC9w6zT2k9");
 pub mod sol_xen_minter {
     use super::*;
 
-    pub fn create_mint(ctx: Context<InitTokenMint>, _metadata: InitTokenParams, miners: Vec<Pubkey>) -> Result<()> {
-        require!(miners.len() + ctx.accounts.miners.keys.len() < 5, SolXenError::BadParam);
-        for miner in miners.clone() {
-            ctx.accounts.miners.keys.push(miner);
-        }
+    pub fn create_mint(_ctx: Context<InitTokenMint>, _metadata: InitTokenParams) -> Result<()> {
 
         /*
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
@@ -60,15 +56,6 @@ pub mod sol_xen_minter {
             None,
         )?;
         */
-        Ok(())
-    }
-
-    pub fn add_miners(ctx: Context<AddMiners>, miners: Vec<Pubkey>) -> Result<()> {
-        require!(miners.len() + ctx.accounts.miners.keys.len() < 5, SolXenError::BadParam);
-        for miner in miners.clone() {
-            ctx.accounts.miners.keys.push(miner);
-        }
-        
         Ok(())
     }
         
@@ -143,17 +130,6 @@ pub struct InitTokenMint<'info> {
     pub admin: Signer<'info>,
     #[account(
         init_if_needed,
-        seeds = [
-            b"sol-xen-miners", 
-            admin.key().as_ref()
-        ],
-        bump,
-        payer = admin,
-        space = Miners::INIT_SPACE,
-    )]
-    pub miners: Box<Account<'info, Miners>>,
-    #[account(
-        init_if_needed,
         seeds = [b"mint"],
         bump,
         payer = admin,
@@ -180,21 +156,6 @@ pub struct InitTokenParams {
 }
 
 #[derive(Accounts)]
-pub struct AddMiners<'info> {
-    #[account(mut)]
-    pub admin: Signer<'info>,
-    #[account(
-    mut,
-    seeds = [
-        b"sol-xen-miners",
-        admin.key().as_ref()
-    ],    
-    bump,
-    )]
-    pub miners: Box<Account<'info, Miners>>,
-}
-
-#[derive(Accounts)]
 #[instruction(kind: u8)]
 pub struct MintTokens<'info> {
     /// CHECK: Address validated using PDA address derivation from seeds
@@ -217,8 +178,6 @@ pub struct MintTokens<'info> {
         associated_token::authority = user,
     )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(seeds = [b"sol-xen-miners"], bump)]
-    pub miners: Account<'info, Miners>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"mint"], bump)]
@@ -237,13 +196,6 @@ pub struct UserSolXnRecord {
     pub hashes: u64,
     pub superhashes: u32,
     pub points: u128
-}
-
-#[account]
-#[derive(InitSpace, Default)]
-pub struct Miners {
-    #[max_len(4)]
-    pub keys: Vec<Pubkey>,
 }
 
 #[account]
