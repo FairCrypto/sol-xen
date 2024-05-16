@@ -1,20 +1,19 @@
 import dotenv from 'dotenv';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
-import { getAddress, isAddress } from 'viem';
 import readline from 'readline'
 
-import {ComputeBudgetProgram, LAMPORTS_PER_SOL} from '@solana/web3.js';
+import {ComputeBudgetProgram, LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
 import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
-import {SolXen} from '../target/types/sol_xen';
+import {SolXenMinter} from '../target/types/sol_xen_minter';
 
 dotenv.config();
 
 enum Cmd {
-    Mine = 'mine',
+    Mint = 'mint',
     Balance = 'balance',
 }
 
@@ -27,36 +26,23 @@ async function main() {
 
     const [, , , ...params] = process.argv;
     let cmd: Cmd;
-    let address: string = '';
     let priorityFee: number = 1;
-    let units: number = 1_200_000;
-    let runs: number = 1;
+    let kind: number;
 
     const yArgs = yargs(hideBin(process.argv))
-        .command(Cmd.Mine, 'Checks gas-related params returned by current network')
-        .command(Cmd.Balance, 'Checks balance of a master account')
+        .command(Cmd.Mint, 'Mint solXEN tokens based on your hash points balance')
+        .command(Cmd.Balance, 'Checks solXEN balance of an account')
         .option('priorityFee', {
             alias: 'f',
             type: 'number',
             default: 1,
             description: 'Solana priority fee, micro-lamports'
         })
-        .option('units', {
-            alias: 'u',
+        .option('kind', {
+            alias: 'k',
             type: 'number',
-            default: 1_400_000,
-            description: 'Solana MAX Compute Units'
-        })
-        .option('address', {
-            alias: 'addr',
-            type: 'string',
-            description: 'Ethereum address to relate XN points to'
-        })
-        .option('runs', {
-            alias: 'r',
-            type: 'number',
-            default: 1,
-            description: 'Number of runs'
+            demandOption: true,
+            description: 'Kind of miner (0, 1...)'
         })
         .help()
         .parseSync()
@@ -73,27 +59,16 @@ async function main() {
         priorityFee = Number(yArgs.priorityFee)
     }
 
-    if (yArgs.units) {
-        units = Number(yArgs.units)
-    }
-
-    if (yArgs.runs) {
-        runs = Number(yArgs.runs)
-    }
-
-    if (yArgs.address) {
-        try {
-            address = getAddress(yArgs.address)
-            if (!isAddress(address, { strict: true })) {
-                console.error("Address malformed")
-                process.exit(1)
-            }
-        } catch (e: any) {
-            console.error(e.message);
+    if (yArgs.kind !== null && typeof yArgs.kind !== 'undefined') {
+        kind = Number(yArgs.kind)
+        if (kind < 0 || kind > 3) {
+            console.log("Wrong kind")
             process.exit(1)
         }
+    } else {
+        console.log("Kind param is required")
+        process.exit(1)
     }
-
     // SETUP SOLANA ENVIRONMENT
 
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
@@ -127,28 +102,29 @@ async function main() {
     console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
 
     // Load the program
-    const program = workspace.SolXen as Program<SolXen>;
+    const program = workspace.SolXenMinter as Program<SolXenMinter>;
     console.log(`Program ID=${G}${program.programId}${U}`);
 
-    const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
-        [
-            Buffer.from("xn-global-counter"),
-        ],
-        program.programId
-    );
-
-    const ethAddress20 = Buffer.from(address.slice(2), 'hex')
-    const [userEthXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
-        [
-            Buffer.from("xn-by-eth"),
-            ethAddress20,
-        ],
-        program.programId
-    );
+    const minerProgramId = process.env.PROGRAM_ID_MINER || '';
+    if (!minerProgramId) {
+        console.error("PROGRAM_ID_MINER is required in .env file")
+        process.exit(1);
+    }
+    console.log(`Miner Program ID=${G}${minerProgramId}${U}`);
 
     const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
         [
             Buffer.from("xn-by-sol"),
+            user.publicKey.toBuffer(),
+            Buffer.from([kind]),
+            new PublicKey(minerProgramId).toBuffer(),
+        ],
+        new PublicKey(minerProgramId)
+    );
+
+    const [userTokenRecordAccount] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("sol-xen-minted"),
             user.publicKey.toBuffer(),
         ],
         program.programId
@@ -166,80 +142,43 @@ async function main() {
         owner: user.publicKey
     })
 
-
     // PROCESS COMMANDS
 
     if (cmd === Cmd.Balance) {
 
         const totalSupply = await connection.getTokenSupply(mintAccount.address);
-        const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        console.log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`)
+        const userTokensRecord = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
+        console.log(`User balance: points=${G}${userTokensRecord.pointsCounters}${U}, tokens=${G}${userTokensRecord.tokensMinted}${U}, supply=${G}${totalSupply.value.uiAmount}${U}`)
 
-        if (address) {
-            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            console.log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`)
-        } else {
-            console.log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
-        }
-    } else if (cmd === Cmd.Mine) {
+    } else if (cmd === Cmd.Mint) {
 
-        console.log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}`);
-        console.log(`Using CU max=${G}${units}${U}`);
-        const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-            units
-        });
+        console.log(`Running minter with params: priorityFee=${G}${priorityFee}${U}`);
         const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: priorityFee
         });
 
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
-        let currentRun = 1;
 
-        for (let run = 1; run <= runs; run++) {
+        const mintAccounts = {
+            user: user.publicKey,
+            mintAccount: mintAccount.address,
+            userTokenAccount,
+            userRecord: userSolXnRecordAccount,
+            userTokenRecord: userTokenRecordAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associateTokenProgram,
+            minerProgram: new PublicKey(minerProgramId)
+        };
+        const mintTx = await program.methods.mintTokens(kind)
+            .accounts(mintAccounts)
+            .signers([user])
+            .preInstructions([addPriorityFee])
+            .rpc({ commitment: "confirmed" });
 
-            const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
+        const totalSupply = await connection.getTokenSupply(mintAccount.address);
+        const userTokensRecord = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
+        console.log(`User balance: points=${G}${userTokensRecord.pointsCounters}${U}, tokens=${G}${userTokensRecord.tokensMinted}${U}, supply=${G}${totalSupply.value.uiAmount}${U}`)
 
-            const mintAccounts = {
-                user: user.publicKey,
-                mintAccount: mintAccount.address,
-                userTokenAccount,
-                xnByEth: userEthXnRecordAccount,
-                xnBySol: userSolXnRecordAccount,
-                globalXnRecord: globalXnRecordAddress,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                associateTokenProgram
-            };
-            const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)})
-                .accounts(mintAccounts)
-                .signers([user])
-                .preInstructions([modifyComputeUnits, addPriorityFee])
-                .rpc({ commitment: "processed", skipPreflight: true });
-
-            // connection.onSignature(mintTx, (...params) => {
-            //    readline.moveCursor(process.stdout, 0, run - currentRun);
-            //    readline.cursorTo(process.stdout, 1);
-            //    process.stdout.write(`.`);
-            //    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-            // }, 'confirmed')
-            connection.onSignature(mintTx, (...params) => {
-                readline.moveCursor(process.stdout, 0, run - currentRun);
-                readline.cursorTo(process.stdout, 1);
-                process.stdout.write(`X`);
-                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-                console.log();
-                if (run === runs) {
-                    process.exit(0);
-                }
-            }, 'finalized')
-
-            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount ||0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}\n`);
-            currentRun++;
-        }
-        await new Promise(resolve => setTimeout(resolve, 30_000))
     } else {
         console.error('Unknown command:', cmd)
         process.exit(1)

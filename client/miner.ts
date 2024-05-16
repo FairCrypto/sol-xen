@@ -9,7 +9,7 @@ import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} fr
 import * as fs from "node:fs";
 import path from "node:path";
 import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
-import {SolXen} from '../target/types/sol_xen';
+import {SolXenMiner} from '../target/types/sol_xen_miner';
 
 dotenv.config();
 
@@ -31,6 +31,7 @@ async function main() {
     let priorityFee: number = 1;
     let units: number = 1_200_000;
     let runs: number = 1;
+    let kind: number;
 
     const yArgs = yargs(hideBin(process.argv))
         .command(Cmd.Mine, 'Checks gas-related params returned by current network')
@@ -58,6 +59,13 @@ async function main() {
             default: 1,
             description: 'Number of runs'
         })
+        .option('kind', {
+            alias: 'k',
+            type: 'number',
+            default: 1,
+            demandOption: true,
+            description: 'Kind of miner (0, 1 ...)'
+        })
         .help()
         .parseSync()
 
@@ -66,6 +74,17 @@ async function main() {
     if (!cmd && params.length === 0) {
         // @ts-ignore
         yArgs.help();
+        process.exit(1)
+    }
+
+    if (yArgs.kind !== null && typeof yArgs.kind !== 'undefined') {
+        kind = Number(yArgs.kind)
+        if (kind < 0 || kind > 3) {
+            console.log("Wrong kind")
+            process.exit(1)
+        }
+    } else {
+        console.log("Kind param is required")
         process.exit(1)
     }
 
@@ -127,12 +146,13 @@ async function main() {
     console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
 
     // Load the program
-    const program = workspace.SolXen as Program<SolXen>;
-    console.log(`Program ID=${G}${program.programId}${U}`);
+    const program = workspace.SolXenMiner as Program<SolXenMiner>;
+    console.log(`Miner program ID=${G}${program.programId}${U}`);
 
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
         [
-            Buffer.from("xn-global-counter"),
+            Buffer.from("xn-miner-global"),
+            Buffer.from([kind]),
         ],
         program.programId
     );
@@ -142,6 +162,8 @@ async function main() {
         [
             Buffer.from("xn-by-eth"),
             ethAddress20,
+            Buffer.from([kind]),
+            program.programId.toBuffer(),
         ],
         program.programId
     );
@@ -150,35 +172,23 @@ async function main() {
         [
             Buffer.from("xn-by-sol"),
             user.publicKey.toBuffer(),
+            Buffer.from([kind]),
+            program.programId.toBuffer(),
         ],
         program.programId
     );
-
-    const [mint] = web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("mint")],
-        program.programId
-    );
-
-    const mintAccount = await getMint(provider.connection, mint);
-
-    const userTokenAccount = utils.token.associatedAddress({
-        mint: mintAccount.address,
-        owner: user.publicKey
-    })
 
 
     // PROCESS COMMANDS
 
     if (cmd === Cmd.Balance) {
 
-        const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        console.log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`)
+        console.log(`Global state: amp=${G}${globalXnRecord.amp}${U}`)
 
         if (address) {
-            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            console.log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`)
+            console.log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}`)
         } else {
             console.log("to show user balance, run with --address YOUR_ETH_ADDRESS key")
         }
@@ -202,15 +212,11 @@ async function main() {
 
             const mintAccounts = {
                 user: user.publicKey,
-                mintAccount: mintAccount.address,
-                userTokenAccount,
                 xnByEth: userEthXnRecordAccount,
                 xnBySol: userSolXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                associateTokenProgram
             };
-            const mintTx = await program.methods.mintTokens({address: Array.from(ethAddress20)})
+            const mintTx = await program.methods.mineHashes({address: Array.from(ethAddress20)}, kind)
                 .accounts(mintAccounts)
                 .signers([user])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
@@ -233,10 +239,8 @@ async function main() {
                 }
             }, 'finalized')
 
-            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const totalSupply = await connection.getTokenSupply(mintAccount.address);
             const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount ||0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}\n`);
+            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
             currentRun++;
         }
         await new Promise(resolve => setTimeout(resolve, 30_000))

@@ -8,7 +8,7 @@ debug.enable(process.env.DEBUG || '*');
 const Y = '\x1b[33m';
 const U = '\x1b[39m';
 async function main() {
-    const log = debug("sol-xen");
+    const log = debug("sol-xen-miner");
     // Set this to your local cluster or mainnet-beta, testnet, devnet
     const network = process.env.ANCHOR_PROVIDER_URL || 'devnet';
     log("Listening to solXEN events on", network);
