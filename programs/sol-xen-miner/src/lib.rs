@@ -3,7 +3,7 @@ use anchor_lang::{
 };
 use sha3::{Digest, Keccak256};
 
-declare_id!("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW");
+declare_id!("BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";

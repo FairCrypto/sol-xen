@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("8r83b8J6fvkRQunGGpKNQ3KPEk3PLeYhSHFLN12iTQuu");
+declare_id!("AAE65RXrFA8EDkyWPHGWTQZ1hGmYyswvCFnC9w6zT2k9");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -63,12 +63,28 @@ pub mod sol_xen_minter {
         Ok(())
     }
 
+    pub fn add_miners(ctx: Context<AddMiners>, miners: Vec<Pubkey>) -> Result<()> {
+        require!(miners.len() + ctx.accounts.miners.keys.len() < 5, SolXenError::BadParam);
+        for miner in miners.clone() {
+            ctx.accounts.miners.keys.push(miner);
+        }
+        
+        Ok(())
+    }
+        
     pub fn mint_tokens(ctx: Context<MintTokens>, kind: u8) -> Result<()> {
+        let miners = vec![
+            solana_program::pubkey::Pubkey::try_from("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99").unwrap(),
+        ];
+        
         require!(kind < 4, SolXenError::BadParam);
         // require!(ctx.accounts.miner_program.owner == "owner");
 
         let minter_program_key = ctx.accounts.miner_program.key();
-        require!(ctx.accounts.miners.keys[kind as usize] == minter_program_key, SolXenError::BadParam);
+        require!(miners[kind as usize] == minter_program_key, SolXenError::BadParam);
 
         let (user_record_pda, _bump_seed) =
             Pubkey::find_program_address(&[
@@ -127,12 +143,15 @@ pub struct InitTokenMint<'info> {
     pub admin: Signer<'info>,
     #[account(
         init_if_needed,
-        seeds = [b"sol-xen-miners"],
+        seeds = [
+            b"sol-xen-miners", 
+            admin.key().as_ref()
+        ],
         bump,
         payer = admin,
         space = Miners::INIT_SPACE,
     )]
-    pub miners: Account<'info, Miners>,
+    pub miners: Box<Account<'info, Miners>>,
     #[account(
         init_if_needed,
         seeds = [b"mint"],
@@ -142,7 +161,7 @@ pub struct InitTokenMint<'info> {
         mint::authority = mint_account.key(),
         mint::freeze_authority = mint_account.key(),
     )]
-    pub mint_account: Account<'info, Mint>,
+    pub mint_account: Box<Account<'info, Mint>>,
     /// CHECK: Address validated using constraint
     // #[account(mut)]
     // pub metadata: UncheckedAccount<'info>,
@@ -158,6 +177,21 @@ pub struct InitTokenParams {
     pub symbol: String,
     pub uri: String,
     pub decimals: u8,
+}
+
+#[derive(Accounts)]
+pub struct AddMiners<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    #[account(
+    mut,
+    seeds = [
+        b"sol-xen-miners",
+        admin.key().as_ref()
+    ],    
+    bump,
+    )]
+    pub miners: Box<Account<'info, Miners>>,
 }
 
 #[derive(Accounts)]
