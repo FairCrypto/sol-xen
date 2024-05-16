@@ -156,14 +156,14 @@ pub struct MineHashes<'info> {
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace,Debug)]
 pub struct UserEthXnRecord {
     pub hashes: u64,
     pub superhashes: u32,
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace,Debug)]
 pub struct UserSolXnRecord {
     pub hashes: u64,
     pub superhashes: u32,
@@ -171,7 +171,7 @@ pub struct UserSolXnRecord {
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace,Debug)]
 pub struct GlobalXnRecord {
     pub amp: u16,
     pub last_amp_slot: u64,

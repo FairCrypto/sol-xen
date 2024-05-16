@@ -6,8 +6,8 @@ skip-lint = false
 seeds = true
 
 [programs.devnet]
-sol_xen_miner = "Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW"
-sol_xen_minter = "JAdTsCgmXdg36Y2cgfz5EMag5QbXn2tu2tGXbxm2jyz5"
+# sol_xen_miner = "Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW"
+sol_xen_minter = "8r83b8J6fvkRQunGGpKNQ3KPEk3PLeYhSHFLN12iTQuu"
 
 [registry]
 url = "https://api.apr.dev"

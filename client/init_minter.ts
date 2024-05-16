@@ -1,4 +1,4 @@
-import {ComputeBudgetProgram} from '@solana/web3.js';
+import {SystemProgram} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
@@ -39,9 +39,13 @@ async function main() {
     const METADATA_SEED = "metadata";
     const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
-
     const [mint] = web3.PublicKey.findProgramAddressSync(
         [Buffer.from("mint")],
+        program.programId
+    );
+
+    const [minersAddress] = web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("sol-xen-miners")],
         program.programId
     );
 
@@ -56,6 +60,7 @@ async function main() {
 
     const createAccounts = {
         admin: provider.wallet.publicKey,
+        miners: minersAddress,
         // metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
     };
@@ -66,9 +71,16 @@ async function main() {
         uri: "",
         decimals: 9,
     }
+    const miners = [
+        new web3.PublicKey(process.env.PROGRAM_ID_MINER0 || ''),
+        new web3.PublicKey(process.env.PROGRAM_ID_MINER1 || ''),
+    ]
 
     // Send the mint transaction (as Admin)
-    const hash = await program.methods.createMint(metadata).accounts(createAccounts).signers([]).rpc();
+    const hash = await program.methods.createMint(metadata, miners)
+        .accounts(createAccounts)
+        .signers([])
+        .rpc();
     console.log('Create Mint tx hash', hash)
 
     const mintAccount = await getMint(provider.connection, mint);

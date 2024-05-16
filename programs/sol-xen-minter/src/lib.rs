@@ -8,9 +8,8 @@ use anchor_spl::{
     associated_token::AssociatedToken,
 };
 use mpl_token_metadata::{types::DataV2};
-use sol_xen_miner::UserSolXnRecord;
 
-declare_id!("JAdTsCgmXdg36Y2cgfz5EMag5QbXn2tu2tGXbxm2jyz5");
+declare_id!("8r83b8J6fvkRQunGGpKNQ3KPEk3PLeYhSHFLN12iTQuu");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -19,7 +18,11 @@ declare_id!("JAdTsCgmXdg36Y2cgfz5EMag5QbXn2tu2tGXbxm2jyz5");
 pub mod sol_xen_minter {
     use super::*;
 
-    pub fn create_mint(_ctx: Context<InitTokenMint>, _metadata: InitTokenParams) -> Result<()> {
+    pub fn create_mint(ctx: Context<InitTokenMint>, _metadata: InitTokenParams, miners: Vec<Pubkey>) -> Result<()> {
+        require!(miners.len() + ctx.accounts.miners.keys.len() < 5, SolXenError::BadParam);
+        for miner in miners.clone() {
+            ctx.accounts.miners.keys.push(miner);
+        }
 
         /*
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
@@ -60,19 +63,40 @@ pub mod sol_xen_minter {
         Ok(())
     }
 
-    pub fn mint_tokens(ctx: Context<MintTokens>, _kind: u8, _minter_program_key: Pubkey) -> Result<()> {
-        
-        let points = ctx.accounts.user_record.points as u64;
+    pub fn mint_tokens(ctx: Context<MintTokens>, kind: u8) -> Result<()> {
+        require!(kind < 4, SolXenError::BadParam);
+        // require!(ctx.accounts.miner_program.owner == "owner");
+
+        let minter_program_key = ctx.accounts.miner_program.key();
+        require!(ctx.accounts.miners.keys[kind as usize] == minter_program_key, SolXenError::BadParam);
+
+        let (user_record_pda, _bump_seed) =
+            Pubkey::find_program_address(&[
+                b"xn-by-sol",
+                ctx.accounts.user.key.as_ref(),
+                &[kind],
+                &minter_program_key.to_bytes()
+            ], &minter_program_key);
+        require!(user_record_pda == ctx.accounts.user_record.key(), SolXenError::BadOwner);
+        require!(*ctx.accounts.user_record.owner == minter_program_key, SolXenError::BadOwner);
+
+        let mut buf: &[u8] = &ctx.accounts.user_record.try_borrow_mut_data()?[..];
+        let user_record: UserSolXnRecord = UserSolXnRecord::try_deserialize(&mut buf)?;
+        let points = user_record.points as u64;
         print!("Total points {} for {}", points, ctx.accounts.user.key.to_string());
 
         let current_token_balance = ctx.accounts.user_tokens_record.tokens_minted as u64;
         print!("Current balance {} for {}", current_token_balance, ctx.accounts.user.key.to_string());
-        
+
         let token_account_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
-        if points > current_token_balance {
+        let points_to_mint = if points > ctx.accounts.user_tokens_record.points_counters[kind as usize] as u64
+        { points - ctx.accounts.user_tokens_record.points_counters[kind as usize] as u64 } else
+        { 0 };
+        // let total_points: u128 = ctx.accounts.user_tokens_record.points_counters.iter().sum();
+        if points_to_mint > 0 {
             // increment minted counter for user
-            ctx.accounts.user_tokens_record.tokens_minted += (points - current_token_balance) as u128;
-            
+            ctx.accounts.user_tokens_record.tokens_minted += points_to_mint as u128;
+            ctx.accounts.user_tokens_record.points_counters[kind as usize] += points_to_mint as u128;
             // Mint solXEN tokens to user
             mint_to(
                 CpiContext::new_with_signer(
@@ -84,7 +108,7 @@ pub mod sol_xen_minter {
                     },
                     token_account_seeds
                 ), // using PDA to sign
-                points - current_token_balance,
+                points_to_mint,
             )?;
         }
 
@@ -101,6 +125,14 @@ pub mod sol_xen_minter {
 pub struct InitTokenMint<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
+    #[account(
+        init_if_needed,
+        seeds = [b"sol-xen-miners"],
+        bump,
+        payer = admin,
+        space = Miners::INIT_SPACE,
+    )]
+    pub miners: Account<'info, Miners>,
     #[account(
         init_if_needed,
         seeds = [b"mint"],
@@ -129,20 +161,10 @@ pub struct InitTokenParams {
 }
 
 #[derive(Accounts)]
-#[instruction(_kind: u8, _minter_program_key: Pubkey)]
+#[instruction(kind: u8)]
 pub struct MintTokens<'info> {
-    #[account(
-        seeds = [
-            b"xn-by-sol",
-            user.key().as_ref(),
-            _kind.to_be_bytes().as_ref(),
-            _minter_program_key.as_ref()
-        ],
-        // owner = _minter_program_key,
-        seeds::program = _minter_program_key,
-        bump
-    )]
-    pub user_record: Box<Account<'info, UserSolXnRecord>>,
+    /// CHECK: Address validated using PDA address derivation from seeds
+    pub user_record: AccountInfo<'info>,
     #[account(
         init_if_needed,
         seeds = [
@@ -161,6 +183,8 @@ pub struct MintTokens<'info> {
         associated_token::authority = user,
     )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
+    #[account(seeds = [b"sol-xen-miners"], bump)]
+    pub miners: Account<'info, Miners>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"mint"], bump)]
@@ -168,13 +192,30 @@ pub struct MintTokens<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-    // pub minter_program: Program<'info, SolXenMiner>,
+    /// CHECK: Address validated using PDA address derivation from seeds
+    pub miner_program: AccountInfo<'info>,
     // pub rent: Sysvar<'info, Rent>,
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(Debug)]
+pub struct UserSolXnRecord {
+    pub hashes: u64,
+    pub superhashes: u32,
+    pub points: u128
+}
+
+#[account]
+#[derive(InitSpace, Default)]
+pub struct Miners {
+    #[max_len(4)]
+    pub keys: Vec<Pubkey>,
+}
+
+#[account]
+#[derive(InitSpace, Default)]
 pub struct UserTokensRecord {
+    pub points_counters: [u128; 4],
     pub tokens_minted: u128
 }
 
@@ -188,6 +229,8 @@ pub enum SolXenError {
     ZeroSlotValue,
     #[msg("Bad account owner")]
     BadOwner,
+    #[msg("Bad param value")]
+    BadParam,
 }
 
 
