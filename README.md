@@ -61,6 +61,23 @@ You can convert `points` only related to a single Miner program at a time. So if
 
 Like with Miner, you'll need to indicate it's kind via --kind or -k param (0...3)
 
+### Xolana ONLY for now
+
+Please make sure you've switched to Xolana RPC. Check the .env file, make sure to have the right RPC URL:
+
+```
+...
+ANCHOR_PROVIDER_URL=http://69.10.34.226:8899
+...
+```
+
+You will also need to switch your local Solana command line tool (CLI) to Xolana, to get some test coin, like that:
+
+```
+solana config set -u http://69.10.34.226:8899
+solana airdrop 10
+```
+
 ## Usage
 
 ### Run miner script
