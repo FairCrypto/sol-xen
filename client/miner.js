@@ -99,6 +99,10 @@ async function main() {
             process.exit(1);
         }
     }
+    const minersStr = process.env.MINERS
+        || 'Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99';
+    const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
+    const programId = miners[kind];
     // SETUP SOLANA ENVIRONMENT
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
     console.log(`\nRunning on ${G}${network}${U}`);
@@ -125,24 +129,24 @@ async function main() {
     console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
     // Load the program
     const program = workspace.SolXenMiner;
-    console.log(`Miner program ID=${G}${program.programId}${U}`);
+    console.log(`Miner program ID=${G}${programId}${U}`);
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-miner-global"),
         Buffer.from([kind]),
-    ], program.programId);
+    ], programId);
     const ethAddress20 = Buffer.from(address.slice(2), 'hex');
     const [userEthXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-by-eth"),
         ethAddress20,
         Buffer.from([kind]),
-        program.programId.toBuffer(),
-    ], program.programId);
+        programId.toBuffer(),
+    ], programId);
     const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-by-sol"),
         user.publicKey.toBuffer(),
         Buffer.from([kind]),
-        program.programId.toBuffer(),
-    ], program.programId);
+        programId.toBuffer(),
+    ], programId);
     // PROCESS COMMANDS
     if (cmd === Cmd.Balance) {
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);

@@ -71,6 +71,12 @@ async function main() {
     }
     // SETUP SOLANA ENVIRONMENT
 
+    const minersStr = process.env.MINERS
+        || 'Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99';
+
+    const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
+    const minerProgramId = miners[kind];
+
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
     console.log(`\nRunning on ${G}${network}${U}`)
     const connection = new web3.Connection(network, 'processed');
@@ -105,7 +111,6 @@ async function main() {
     const program = workspace.SolXenMinter as Program<SolXenMinter>;
     console.log(`Program ID=${G}${program.programId}${U}`);
 
-    const minerProgramId = process.env.PROGRAM_ID_MINER || '';
     if (!minerProgramId) {
         console.error("PROGRAM_ID_MINER is required in .env file")
         process.exit(1);

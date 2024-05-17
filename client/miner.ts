@@ -8,7 +8,6 @@ import {ComputeBudgetProgram, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
-import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {SolXenMiner} from '../target/types/sol_xen_miner';
 
 dotenv.config();
@@ -113,6 +112,12 @@ async function main() {
         }
     }
 
+    const minersStr = process.env.MINERS
+        || 'Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99';
+
+    const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
+    const programId = miners[kind];
+
     // SETUP SOLANA ENVIRONMENT
 
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
@@ -147,14 +152,14 @@ async function main() {
 
     // Load the program
     const program = workspace.SolXenMiner as Program<SolXenMiner>;
-    console.log(`Miner program ID=${G}${program.programId}${U}`);
+    console.log(`Miner program ID=${G}${programId}${U}`);
 
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
         [
             Buffer.from("xn-miner-global"),
             Buffer.from([kind]),
         ],
-        program.programId
+        programId
     );
 
     const ethAddress20 = Buffer.from(address.slice(2), 'hex')
@@ -163,9 +168,9 @@ async function main() {
             Buffer.from("xn-by-eth"),
             ethAddress20,
             Buffer.from([kind]),
-            program.programId.toBuffer(),
+            programId.toBuffer(),
         ],
-        program.programId
+        programId
     );
 
     const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync(
@@ -173,9 +178,9 @@ async function main() {
             Buffer.from("xn-by-sol"),
             user.publicKey.toBuffer(),
             Buffer.from([kind]),
-            program.programId.toBuffer(),
+            programId.toBuffer(),
         ],
-        program.programId
+        programId
     );
 
 
