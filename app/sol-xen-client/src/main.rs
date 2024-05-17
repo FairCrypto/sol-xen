@@ -1,3 +1,4 @@
+// use std::io::BufRead;
 use std::mem::size_of;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::hash::{hash};
@@ -115,8 +116,13 @@ fn main() {
 fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u16, kind: u8) {
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
-    let program_id_str = std::env::var("PROGRAM_ID_MINER").expect("PROGRAM_ID must be set.");
-    let program_id = Pubkey::try_from(program_id_str.as_str()).expect("Bad program ID");
+
+    let miners_program_ids_str= std::env::var("MINERS")
+        .unwrap_or(String::from("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99"));
+    let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
+    assert_eq!(miners.len(), 4, "Bad miners set");
+
+    let program_id = Pubkey::try_from(miners[kind as usize]).expect("Bad program ID");
 
     println!("Miner Program ID={} kind={}", program_id.to_string().green(), kind.to_string().green());
 
@@ -131,7 +137,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
         priority_fee.to_string().green(),
         runs.to_string().green()
     );
-    
+
     let (global_xn_record_pda, _global_bump) = Pubkey::find_program_address(
         &[b"xn-miner-global", kind.to_be_bytes().as_slice()],
         &program_id
@@ -159,7 +165,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
         &program_id
     );
     println!("User Sol PDA: {}", user_sol_xn_record_pda.to_string().green());
-    
+
     /*
     let global_data_raw = client.get_account_data(&global_xn_record_pda).unwrap();
     let global_data: [u8; size_of::<GlobalXnRecord>() - 10] = global_data_raw.as_slice()[8..46].try_into().unwrap();
@@ -238,7 +244,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
                             }
                             Err(_) => println!("Account data not yet ready; skipping")
                         }
-                        
+
                     }
                     Err(_) => println!("Account data not yet ready; skipping")
                 }
@@ -253,10 +259,16 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
 fn do_mint(priority_fee: u64, kind: u8) {
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
-    let program_id_miner_str = std::env::var("PROGRAM_ID_MINER").expect("PROGRAM_ID must be set.");
-    let program_id_miner = Pubkey::try_from(program_id_miner_str.as_str()).expect("Bad program ID");
+
     let program_id_minter_str = std::env::var("PROGRAM_ID_MINTER").expect("PROGRAM_ID must be set.");
     let program_id_minter = Pubkey::try_from(program_id_minter_str.as_str()).expect("Bad program ID");
+
+    let miners_program_ids_str= std::env::var("MINERS")
+        .unwrap_or(String::from("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99"));
+    let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
+    assert_eq!(miners.len(), 4, "Bad miners set");
+
+    let program_id_miner = Pubkey::try_from(miners[kind as usize]).expect("Bad program ID");
 
     // println!("Test{:?}", kind.to_be_bytes().as_slice());
     println!("Program ID={}", program_id_minter.to_string().green());
@@ -305,11 +317,11 @@ fn do_mint(priority_fee: u64, kind: u8) {
     let method_name_data = "global:mint_tokens";
     let digest = hash(method_name_data.as_bytes());
     let ix_data = &digest.to_bytes()[0..8];
-    
+
     let instruction = Instruction {
         program_id: program_id_minter,
         data: [
-            ix_data, 
+            ix_data,
             kind.to_be_bytes().as_slice()
         ].concat().to_vec(),
         accounts: vec![
@@ -343,7 +355,7 @@ fn do_mint(priority_fee: u64, kind: u8) {
 
     match result {
         Ok(signature) => {
-            
+
             let maybe_user_account_data_raw = client.get_account_data(&user_sol_xn_record_pda);
             match maybe_user_account_data_raw {
                 Ok(user_account_data_raw) => {
@@ -376,7 +388,7 @@ fn do_mint(priority_fee: u64, kind: u8) {
                 }
                 Err(_) => println!("Account data not yet ready; skipping")
             }
-            
+
             println!("Sig={}", signature)
         },
         Err(err) => println!("Failed: {:?}", err),
