@@ -48,6 +48,8 @@ struct Args {
     units: u64,
     #[arg(short, long, default_value_t = 1)]
     runs: u16,
+    #[arg(short, long, default_value_t = 1)]
+    delay: u8,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]

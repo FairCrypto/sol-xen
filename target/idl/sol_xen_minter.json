@@ -1,0 +1,255 @@
+{
+  "address": "3JSyo6R489DcXedDYQUY7XbGXsmCz4mQH7sWeK5VE8vA",
+  "metadata": {
+    "name": "sol_xen_minter",
+    "version": "0.1.0-epsilon",
+    "spec": "0.1.0",
+    "description": "solXEN Minter Program. Convert mined points to solXEN tokens"
+  },
+  "instructions": [
+    {
+      "name": "create_mint",
+      "discriminator": [
+        69,
+        44,
+        215,
+        132,
+        253,
+        214,
+        41,
+        45
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_metadata",
+          "type": {
+            "defined": {
+              "name": "InitTokenParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "mint_tokens",
+      "discriminator": [
+        59,
+        132,
+        24,
+        246,
+        122,
+        39,
+        8,
+        243
+      ],
+      "accounts": [
+        {
+          "name": "user_record"
+        },
+        {
+          "name": "user_tokens_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  111,
+                  108,
+                  45,
+                  120,
+                  101,
+                  110,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "miner_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "kind",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "UserTokensRecord",
+      "discriminator": [
+        113,
+        218,
+        188,
+        234,
+        62,
+        173,
+        78,
+        230
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MintIsAlreadyActive",
+      "msg": "solXEN Mint has been already initialized"
+    },
+    {
+      "code": 6001,
+      "name": "MintIsNotActive",
+      "msg": "solXEN Mint has not yet started or is over"
+    },
+    {
+      "code": 6002,
+      "name": "ZeroSlotValue",
+      "msg": "Slot value is Zero"
+    },
+    {
+      "code": 6003,
+      "name": "BadOwner",
+      "msg": "Bad account owner"
+    },
+    {
+      "code": 6004,
+      "name": "BadParam",
+      "msg": "Bad param value"
+    }
+  ],
+  "types": [
+    {
+      "name": "InitTokenParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserTokensRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "points_counters",
+            "type": {
+              "array": [
+                "u128",
+                4
+              ]
+            }
+          },
+          {
+            "name": "tokens_minted",
+            "type": "u128"
+          }
+        ]
+      }
+    }
+  ]
+}

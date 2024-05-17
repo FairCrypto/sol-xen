@@ -5,10 +5,19 @@ import { getAddress, isAddress } from 'viem';
 import readline from 'readline'
 
 import {ComputeBudgetProgram, LAMPORTS_PER_SOL} from '@solana/web3.js';
-import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
+import {AnchorProvider, setProvider, Program, web3, Wallet, workspace,} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
-import {SolXenMiner} from '../target/types/sol_xen_miner';
+
+import {SolXenMiner as TMiner0} from '../target/types/sol_xen_miner_0';
+import {SolXenMiner as TMiner1} from '../target/types/sol_xen_miner_1';
+import {SolXenMiner as TMiner2} from '../target/types/sol_xen_miner_2';
+import {SolXenMiner as TMiner3} from '../target/types/sol_xen_miner_3';
+
+import SolXenMiner0 from '../target/idl/sol_xen_miner_0.json'
+import SolXenMiner1 from '../target/idl/sol_xen_miner_1.json'
+import SolXenMiner2 from '../target/idl/sol_xen_miner_2.json'
+import SolXenMiner3 from '../target/idl/sol_xen_miner_3.json'
 
 dotenv.config();
 
@@ -151,8 +160,17 @@ async function main() {
     console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
 
     // Load the program
-    const program = workspace.SolXenMiner as Program<SolXenMiner>;
-    console.log(`Miner program ID=${G}${programId}${U}`);
+    let program;
+    if (kind === 0) {
+        program = workspace.SolXenMiner0 as Program<TMiner0>;
+    } else if (kind === 1) {
+        program = workspace.SolXenMiner1 as Program<TMiner1>;
+    } else if (kind === 2) {
+        program = workspace.SolXenMiner2 as Program<TMiner2>;
+    } else {
+        program = workspace.SolXenMiner3 as Program<TMiner3>;
+    }
+    console.log(`Miner program ID=${G}${programId}${U}, Anchor program ID=${program.programId}`);
 
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync(
         [
@@ -220,6 +238,7 @@ async function main() {
                 xnByEth: userEthXnRecordAccount,
                 xnBySol: userSolXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
+                programId
             };
             const mintTx = await program.methods.mineHashes({address: Array.from(ethAddress20)}, kind)
                 .accounts(mintAccounts)

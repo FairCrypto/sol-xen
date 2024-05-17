@@ -1,0 +1,480 @@
+{
+  "address": "joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J",
+  "metadata": {
+    "name": "sol_xen_miner",
+    "version": "0.1.0-epsilon",
+    "spec": "0.1.0",
+    "description": "solXEN Miner Program. Search for hash patterns, earn points"
+  },
+  "instructions": [
+    {
+      "name": "init_miner",
+      "discriminator": [
+        144,
+        159,
+        202,
+        208,
+        234,
+        154,
+        242,
+        55
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global_xn_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  109,
+                  105,
+                  110,
+                  101,
+                  114,
+                  45,
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "kind",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "mine_hashes",
+      "discriminator": [
+        192,
+        6,
+        168,
+        29,
+        123,
+        183,
+        150,
+        48
+      ],
+      "accounts": [
+        {
+          "name": "global_xn_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  109,
+                  105,
+                  110,
+                  101,
+                  114,
+                  45,
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
+              }
+            ]
+          }
+        },
+        {
+          "name": "xn_by_eth",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  98,
+                  121,
+                  45,
+                  101,
+                  116,
+                  104
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "_eth_account.address"
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  155,
+                  41,
+                  4,
+                  8,
+                  70,
+                  79,
+                  227,
+                  10,
+                  196,
+                  144,
+                  149,
+                  190,
+                  235,
+                  73,
+                  21,
+                  69,
+                  131,
+                  189,
+                  72,
+                  117,
+                  243,
+                  1,
+                  195,
+                  98,
+                  252,
+                  9,
+                  39,
+                  159,
+                  226,
+                  152,
+                  171,
+                  208
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "xn_by_sol",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  110,
+                  45,
+                  98,
+                  121,
+                  45,
+                  115,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  155,
+                  41,
+                  4,
+                  8,
+                  70,
+                  79,
+                  227,
+                  10,
+                  196,
+                  144,
+                  149,
+                  190,
+                  235,
+                  73,
+                  21,
+                  69,
+                  131,
+                  189,
+                  72,
+                  117,
+                  243,
+                  1,
+                  195,
+                  98,
+                  252,
+                  9,
+                  39,
+                  159,
+                  226,
+                  152,
+                  171,
+                  208
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_eth_account",
+          "type": {
+            "defined": {
+              "name": "EthAccount"
+            }
+          }
+        },
+        {
+          "name": "_kind",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GlobalXnRecord",
+      "discriminator": [
+        29,
+        48,
+        183,
+        205,
+        201,
+        7,
+        241,
+        7
+      ]
+    },
+    {
+      "name": "UserEthXnRecord",
+      "discriminator": [
+        224,
+        152,
+        129,
+        49,
+        149,
+        104,
+        210,
+        196
+      ]
+    },
+    {
+      "name": "UserSolXnRecord",
+      "discriminator": [
+        105,
+        200,
+        79,
+        162,
+        225,
+        52,
+        172,
+        238
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "HashEvent",
+      "discriminator": [
+        72,
+        165,
+        108,
+        28,
+        78,
+        144,
+        127,
+        138
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MintIsAlreadyActive",
+      "msg": "solXEN Mint has been already initialized"
+    },
+    {
+      "code": 6001,
+      "name": "MintIsNotActive",
+      "msg": "solXEN Mint has not yet started or is over"
+    },
+    {
+      "code": 6002,
+      "name": "ZeroSlotValue",
+      "msg": "Slot value is Zero"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidMinerKind",
+      "msg": "Invalid miner kind"
+    }
+  ],
+  "types": [
+    {
+      "name": "EthAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": {
+              "array": [
+                "u8",
+                20
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalXnRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amp",
+            "type": "u16"
+          },
+          {
+            "name": "last_amp_slot",
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "HashEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "eth_account",
+            "type": {
+              "array": [
+                "u8",
+                20
+              ]
+            }
+          },
+          {
+            "name": "hashes",
+            "type": "u8"
+          },
+          {
+            "name": "superhashes",
+            "type": "u8"
+          },
+          {
+            "name": "points",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserEthXnRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "hashes",
+            "type": "u64"
+          },
+          {
+            "name": "superhashes",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserSolXnRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "hashes",
+            "type": "u64"
+          },
+          {
+            "name": "superhashes",
+            "type": "u32"
+          },
+          {
+            "name": "points",
+            "type": "u128"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { getAddress, isAddress } from 'viem';
 import readline from 'readline';
 import { ComputeBudgetProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { AnchorProvider, setProvider, web3, Wallet, workspace } from '@coral-xyz/anchor';
+import { AnchorProvider, setProvider, web3, Wallet, workspace, } from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
 dotenv.config();
@@ -128,8 +128,20 @@ async function main() {
     console.log(`Block height=${G}${await connection.getBlockHeight()}${U}`);
     console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
     // Load the program
-    const program = workspace.SolXenMiner;
-    console.log(`Miner program ID=${G}${programId}${U}`);
+    let program;
+    if (kind === 0) {
+        program = workspace.SolXenMiner0;
+    }
+    else if (kind === 1) {
+        program = workspace.SolXenMiner1;
+    }
+    else if (kind === 2) {
+        program = workspace.SolXenMiner2;
+    }
+    else {
+        program = workspace.SolXenMiner3;
+    }
+    console.log(`Miner program ID=${G}${programId}${U}, Anchor program ID=${program.programId}`);
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-miner-global"),
         Buffer.from([kind]),
@@ -177,6 +189,7 @@ async function main() {
                 xnByEth: userEthXnRecordAccount,
                 xnBySol: userSolXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
+                programId
             };
             const mintTx = await program.methods.mineHashes({ address: Array.from(ethAddress20) }, kind)
                 .accounts(mintAccounts)

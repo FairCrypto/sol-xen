@@ -34,8 +34,6 @@ USER_WALLET=<path_to_solana_wallet_file (id.json)>
 ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
 DEBUG=*
 
-PROGRAM_ID_MINER=Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW # one of 4 miners
-
 PROGRAM_ID_MINTER=3JSyo6R489DcXedDYQUY7XbGXsmCz4mQH7sWeK5VE8vA
 ```
 
