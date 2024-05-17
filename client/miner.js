@@ -25,6 +25,7 @@ async function main() {
     let units = 1_200_000;
     let runs = 1;
     let kind;
+    let delay = 1;
     const yArgs = yargs(hideBin(process.argv))
         .command(Cmd.Mine, 'Checks gas-related params returned by current network')
         .command(Cmd.Balance, 'Checks balance of a master account')
@@ -58,6 +59,13 @@ async function main() {
         demandOption: true,
         description: 'Kind of miner (0, 1 ...)'
     })
+        .option('delay', {
+        alias: 'd',
+        type: 'number',
+        default: 1,
+        demandOption: true,
+        description: 'Delay between txs'
+    })
         .help()
         .parseSync();
     cmd = yArgs._[0];
@@ -85,6 +93,9 @@ async function main() {
     }
     if (yArgs.runs) {
         runs = Number(yArgs.runs);
+    }
+    if (yArgs.delay) {
+        delay = Number(yArgs.delay);
     }
     if (yArgs.address) {
         try {
@@ -172,7 +183,7 @@ async function main() {
         }
     }
     else if (cmd === Cmd.Mine) {
-        console.log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}`);
+        console.log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}, delay=${G}${delay}${U}`);
         console.log(`Using CU max=${G}${units}${U}`);
         const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
             units
@@ -196,6 +207,7 @@ async function main() {
                 .signers([user])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
                 .rpc({ commitment: "processed", skipPreflight: true });
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
             // connection.onSignature(mintTx, (...params) => {
             //    readline.moveCursor(process.stdout, 0, run - currentRun);
             //    readline.cursorTo(process.stdout, 1);
@@ -213,7 +225,7 @@ async function main() {
                 }
             }, 'finalized');
             const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
+            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, kind=${Y}${kind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
             currentRun++;
         }
         await new Promise(resolve => setTimeout(resolve, 30_000));

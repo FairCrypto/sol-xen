@@ -19,8 +19,8 @@ use borsh::{BorshSerialize, BorshDeserialize, to_vec, BorshSchema};
 use ethaddr::Address;
 use colored::*;
 use dotenv::dotenv;
-// use std::thread;
-// use std::time::Duration;
+use std::thread;
+use std::time::Duration;
 
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
@@ -94,6 +94,7 @@ fn main() {
     let ethereum_address: String = args.address;
     let runs = args.runs;
     let kind = args.kind;
+    let delay = args.delay;
     let command = &args.command[..];
 
     // Use ethaddr to parse and validate the Ethereum address with checksum
@@ -107,7 +108,7 @@ fn main() {
 
     println!("Command: {}", command);
     match command {
-        "mine" => do_mine(ethereum_address, _address.0, priority_fee, runs, kind),
+        "mine" => do_mine(ethereum_address, _address.0, priority_fee, runs, kind, delay),
         "mint" => do_mint(priority_fee, kind),
         _ => {}
     }
@@ -115,7 +116,7 @@ fn main() {
 }
 
 // Earn (mine) points by looking for hash patterns in randomized numbers
-fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u16, kind: u8) {
+fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u16, kind: u8, delay: u8) {
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
@@ -133,11 +134,12 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
     let payer = read_keypair_file(&keypair_path).expect("Failed to read keypair file");
 
     println!(
-        "Using user wallet={}, account={}, fee={}, runs={}",
+        "Using user wallet={}, account={}, fee={}, runs={}, delay={}",
         payer.pubkey().to_string().green(),
         ethereum_address.green(),
         priority_fee.to_string().green(),
-        runs.to_string().green()
+        runs.to_string().green(),
+        delay.to_string().green(),
     );
 
     let (global_xn_record_pda, _global_bump) = Pubkey::find_program_address(
@@ -253,7 +255,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
             },
             Err(err) => println!("Failed: {:?}", err),
         };
-        // thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(delay as u64));
     }
 }
 
