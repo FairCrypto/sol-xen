@@ -48,9 +48,9 @@ struct Args {
     #[arg(short, long, default_value_t = 1_400_000)]
     units: u32,
     #[arg(short, long, default_value_t = 1)]
-    runs: u16,
-    #[arg(short, long, default_value_t = 1)]
-    delay: u8,
+    runs: u32,
+    #[arg(short, long, default_value_t = 0.5)]
+    delay: f32,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
@@ -119,7 +119,7 @@ fn main() {
 }
 
 // Earn (mine) points by looking for hash patterns in randomized numbers
-fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u16, kind: u8, delay: u8, units: u32) {
+fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u32, kind: u8, delay: f32, units: u32) {
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
@@ -260,7 +260,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
             },
             Err(err) => println!("Failed: {:?}", err),
         };
-        thread::sleep(Duration::from_secs(delay as u64));
+        thread::sleep(Duration::from_secs_f32(delay));
     }
 }
 
