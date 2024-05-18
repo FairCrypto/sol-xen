@@ -46,7 +46,7 @@ struct Args {
     #[arg(short, long, default_value_t = 1)]
     fee: u64,
     #[arg(short, long, default_value_t = 1_400_000)]
-    units: u64,
+    units: u32,
     #[arg(short, long, default_value_t = 1)]
     runs: u16,
     #[arg(short, long, default_value_t = 1)]
@@ -97,6 +97,7 @@ fn main() {
     let runs = args.runs;
     let kind = args.kind;
     let delay = args.delay;
+    let units = args.units;
     let command = &args.command[..];
 
     // Use ethaddr to parse and validate the Ethereum address with checksum
@@ -110,7 +111,7 @@ fn main() {
 
     println!("Command: {}", command);
     match command {
-        "mine" => do_mine(ethereum_address, _address.0, priority_fee, runs, kind, delay),
+        "mine" => do_mine(ethereum_address, _address.0, priority_fee, runs, kind, delay, units),
         "mint" => do_mint(priority_fee, kind),
         _ => {}
     }
@@ -118,7 +119,7 @@ fn main() {
 }
 
 // Earn (mine) points by looking for hash patterns in randomized numbers
-fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u16, kind: u8, delay: u8) {
+fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs: u16, kind: u8, delay: u8, units: u32) {
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
@@ -212,7 +213,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
             ]
         };
 
-        let compute_budget_instruction_limit = ComputeBudgetInstruction::set_compute_unit_limit(1_400_000);
+        let compute_budget_instruction_limit = ComputeBudgetInstruction::set_compute_unit_limit(units);
         let compute_budget_instruction_price = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
 
         let transaction = Transaction::new_signed_with_payer(
