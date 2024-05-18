@@ -6,6 +6,7 @@ import { AnchorProvider, setProvider, web3, Wallet, workspace, utils } from '@co
 import * as fs from "node:fs";
 import path from "node:path";
 import { getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import BN from "bn.js";
 dotenv.config();
 var Cmd;
 (function (Cmd) {
@@ -15,6 +16,7 @@ var Cmd;
 const G = '\x1b[32m';
 const Y = '\x1b[33m';
 const U = '\x1b[39m';
+const decimals = new BN(1_000_000_000);
 async function main() {
     // PARSE CLI ARGS
     const [, , , ...params] = process.argv;
@@ -121,6 +123,8 @@ async function main() {
         const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: priorityFee
         });
+        const totalSupplyPre = await connection.getTokenSupply(mintAccount.address);
+        const userTokensRecordPre = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
         const mintAccounts = {
             user: user.publicKey,
@@ -139,7 +143,10 @@ async function main() {
             .rpc({ commitment: "confirmed" });
         const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const userTokensRecord = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
-        console.log(`User balance: points=${G}${userTokensRecord.pointsCounters}${U}, tokens=${G}${userTokensRecord.tokensMinted}${U}, supply=${G}${totalSupply.value.uiAmount}${U}`);
+        const delta = (userTokensRecord.tokensMinted.sub(userTokensRecordPre.tokensMinted).div(decimals)).toNumber();
+        const deltaStr = delta > 0 ? `${Y}(+${delta})${U}` : '';
+        const counters = userTokensRecord.pointsCounters.map(c => c.div(decimals).toNumber());
+        console.log(`User balance: points=${G}${counters}${U}, tokens=${G}${userTokensRecord.tokensMinted.div(decimals).toNumber()}${U}${deltaStr}. Total supply=${G}${totalSupply.value.uiAmount}${U}`);
     }
     else {
         console.error('Unknown command:', cmd);

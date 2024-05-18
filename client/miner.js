@@ -111,7 +111,7 @@ async function main() {
         }
     }
     const minersStr = process.env.MINERS
-        || 'Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99';
+        || '8pDDReRZts1CkKdw1rcheSEc1N5V5JQcoqQgBu2koWen,65cLAJY4GLgiajWCktMg26ttSvH3yS4uoPbTysguSm85,JAviBzLr8kFptru4Uqwvp9kUYzr8HasZAizhqrh7czHe,8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76';
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
     const programId = miners[kind];
     // SETUP SOLANA ENVIRONMENT
@@ -202,7 +202,8 @@ async function main() {
                 globalXnRecord: globalXnRecordAddress,
                 programId
             };
-            const mintTx = await program.methods.mineHashes({ address: Array.from(ethAddress20) }, kind)
+            const ethAddr = { address: Array.from(ethAddress20), addressStr: address };
+            const mintTx = await program.methods.mineHashes(ethAddr, kind)
                 .accounts(mintAccounts)
                 .signers([user])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
