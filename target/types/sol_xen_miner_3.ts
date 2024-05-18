@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/sol_xen_miner.json`.
  */
 export type SolXenMiner = {
-  "address": "9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG",
+  "address": "8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76",
   "metadata": {
     "name": "solXenMiner",
     "version": "0.1.0-epsilon",
@@ -145,7 +145,7 @@ export type SolXenMiner = {
               },
               {
                 "kind": "arg",
-                "path": "_eth_account.address"
+                "path": "eth_account.address"
               },
               {
                 "kind": "arg",
@@ -154,38 +154,38 @@ export type SolXenMiner = {
               {
                 "kind": "const",
                 "value": [
-                  155,
-                  41,
-                  4,
-                  8,
-                  70,
-                  79,
-                  227,
-                  10,
-                  196,
-                  144,
-                  149,
-                  190,
-                  235,
-                  73,
-                  21,
-                  69,
-                  131,
-                  189,
-                  72,
-                  117,
-                  243,
-                  1,
-                  195,
-                  98,
-                  252,
-                  9,
+                  115,
+                  104,
+                  172,
+                  35,
+                  28,
+                  38,
+                  25,
+                  96,
+                  31,
                   39,
-                  159,
-                  226,
+                  165,
+                  236,
+                  116,
+                  85,
+                  221,
+                  132,
+                  136,
+                  65,
+                  44,
+                  28,
+                  2,
+                  49,
                   152,
-                  171,
-                  208
+                  16,
+                  45,
+                  105,
+                  28,
+                  213,
+                  78,
+                  137,
+                  224,
+                  241
                 ]
               }
             ]
@@ -221,38 +221,38 @@ export type SolXenMiner = {
               {
                 "kind": "const",
                 "value": [
-                  155,
-                  41,
-                  4,
-                  8,
-                  70,
-                  79,
-                  227,
-                  10,
-                  196,
-                  144,
-                  149,
-                  190,
-                  235,
-                  73,
-                  21,
-                  69,
-                  131,
-                  189,
-                  72,
-                  117,
-                  243,
-                  1,
-                  195,
-                  98,
-                  252,
-                  9,
+                  115,
+                  104,
+                  172,
+                  35,
+                  28,
+                  38,
+                  25,
+                  96,
+                  31,
                   39,
-                  159,
-                  226,
+                  165,
+                  236,
+                  116,
+                  85,
+                  221,
+                  132,
+                  136,
+                  65,
+                  44,
+                  28,
+                  2,
+                  49,
                   152,
-                  171,
-                  208
+                  16,
+                  45,
+                  105,
+                  28,
+                  213,
+                  78,
+                  137,
+                  224,
+                  241
                 ]
               }
             ]
@@ -360,6 +360,16 @@ export type SolXenMiner = {
       "code": 6003,
       "name": "invalidMinerKind",
       "msg": "Invalid miner kind"
+    },
+    {
+      "code": 6004,
+      "name": "invalidEthAddressChecksum",
+      "msg": "Invalid Ethereum address checksum"
+    },
+    {
+      "code": 6005,
+      "name": "invalidEthAddressData",
+      "msg": "Ethereum address data doesnt match"
     }
   ],
   "types": [
@@ -376,6 +386,10 @@ export type SolXenMiner = {
                 20
               ]
             }
+          },
+          {
+            "name": "addressStr",
+            "type": "string"
           }
         ]
       }
@@ -405,6 +419,18 @@ export type SolXenMiner = {
           {
             "name": "kind",
             "type": "u8"
+          },
+          {
+            "name": "hashes",
+            "type": "u64"
+          },
+          {
+            "name": "superhashes",
+            "type": "u32"
+          },
+          {
+            "name": "points",
+            "type": "u128"
           }
         ]
       }

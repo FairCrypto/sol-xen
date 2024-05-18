@@ -61,7 +61,7 @@ async function main() {
 
     const metadata = {
         name: "solXEN (epsilon)",
-        symbol: "solXENe1",
+        symbol: "solXENe2",
         uri: "",
         decimals: 9,
     }

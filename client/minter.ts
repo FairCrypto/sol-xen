@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
-import readline from 'readline'
 
 import {ComputeBudgetProgram, LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
@@ -9,6 +8,7 @@ import * as fs from "node:fs";
 import path from "node:path";
 import {getMint, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {SolXenMinter} from '../target/types/sol_xen_minter';
+import BN from "bn.js";
 
 dotenv.config();
 
@@ -20,6 +20,8 @@ enum Cmd {
 const G = '\x1b[32m';
 const Y = '\x1b[33m';
 const U = '\x1b[39m';
+
+const decimals = new BN(1_000_000_000);
 
 async function main() {
     // PARSE CLI ARGS
@@ -162,6 +164,9 @@ async function main() {
             microLamports: priorityFee
         });
 
+        const totalSupplyPre = await connection.getTokenSupply(mintAccount.address);
+        const userTokensRecordPre = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
+
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
 
         const mintAccounts = {
@@ -182,7 +187,10 @@ async function main() {
 
         const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const userTokensRecord = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
-        console.log(`User balance: points=${G}${userTokensRecord.pointsCounters}${U}, tokens=${G}${userTokensRecord.tokensMinted}${U}, supply=${G}${totalSupply.value.uiAmount}${U}`)
+        const delta = (userTokensRecord.tokensMinted.sub(userTokensRecordPre.tokensMinted).div(decimals)).toNumber();
+        const deltaStr = delta > 0 ? `${Y}(+${delta})${U}` : '';
+        const counters = userTokensRecord.pointsCounters.map(c => c.div(decimals).toNumber());
+        console.log(`User balance: points=${G}${counters}${U}, tokens=${G}${userTokensRecord.tokensMinted.div(decimals).toNumber()}${U}${deltaStr}. Total supply=${G}${totalSupply.value.uiAmount}${U}`)
 
     } else {
         console.error('Unknown command:', cmd)

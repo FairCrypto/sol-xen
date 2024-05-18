@@ -25,11 +25,12 @@ use std::time::Duration;
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
     pub address: [u8; 20],
+    pub address_str: String
 }
 
 #[derive(BorshSerialize, Debug)]
 pub struct MineHashes {
-    pub _eth_account: EthAccount,
+    pub eth_account: EthAccount,
     pub _kind: u8,
 }
 
@@ -54,12 +55,13 @@ struct Args {
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
 pub struct GlobalXnRecord {
-    pub amp: u16, // 2 
-    pub last_amp_slot: u64, // 8
-    pub points: u128, // 16
-    pub hashes: u32, // 4
-    pub superhashes: u32, // 4
-    pub txs: u32 // 4
+    pub amp: u16,
+    pub last_amp_slot: u64,
+    pub nonce: [u8; 4],
+    pub kind: u8,
+    pub hashes: u64,
+    pub superhashes: u32,
+    pub points: u128
 } // 38 <> 48
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
@@ -121,7 +123,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
     let miners_program_ids_str= std::env::var("MINERS")
-        .unwrap_or(String::from("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW,joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J,9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG,BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99"));
+        .unwrap_or(String::from("8pDDReRZts1CkKdw1rcheSEc1N5V5JQcoqQgBu2koWen,65cLAJY4GLgiajWCktMg26ttSvH3yS4uoPbTysguSm85,JAviBzLr8kFptru4Uqwvp9kUYzr8HasZAizhqrh7czHe,8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76"));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), 4, "Bad miners set");
 
@@ -188,10 +190,12 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
     let ix_data  = &digest.to_bytes()[0..8];
 
     for _run in 0..runs {
+        let address_str = ethereum_address.clone();
 
         let mint_hashes = MineHashes {
-            _eth_account: EthAccount {
-                address
+            eth_account: EthAccount {
+                address,
+                address_str
             },
             _kind: kind
         };
@@ -369,10 +373,10 @@ fn do_mint(priority_fee: u64, kind: u8) {
                     let user_state = UserSolXnRecord::try_from_slice(user_data.as_ref()).unwrap();
                     println!(
                         "Tx={}, hashes={}, superhashes={}, points={}",
-                        signature,
-                        user_state.hashes,
-                        user_state.superhashes,
-                        user_state.points,
+                        signature.to_string().yellow(),
+                        user_state.hashes.to_string().yellow(),
+                        user_state.superhashes.to_string().yellow(),
+                        user_state.points.to_string().yellow(),
                     )
                 }
                 Err(_) => println!("Account data not yet ready; skipping")
@@ -393,7 +397,6 @@ fn do_mint(priority_fee: u64, kind: u8) {
                 Err(_) => println!("Account data not yet ready; skipping")
             }
 
-            println!("Sig={}", signature)
         },
         Err(err) => println!("Failed: {:?}", err),
     };

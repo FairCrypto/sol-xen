@@ -3475,6 +3475,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "byteorder",
+ "ethaddr",
  "hex",
  "sha3 0.10.8",
  "solana-program",

@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("3JSyo6R489DcXedDYQUY7XbGXsmCz4mQH7sWeK5VE8vA");
+declare_id!("2nHCigQaERP2gUJVqeMXz1D6xrCr6RYLY8UptQUNGbHg");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -61,10 +61,10 @@ pub mod sol_xen_minter {
         
     pub fn mint_tokens(ctx: Context<MintTokens>, kind: u8) -> Result<()> {
         let miners = vec![
-            solana_program::pubkey::Pubkey::try_from("Ahhm8H2g6vJ5K4KDLp8C9QNH6vvTft1J3NmUst3jeVvW").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("joPznefcUrbGq1sQ8ztxVSY7aeUUrTQmdTbmKuRkn8J").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("9kDwKaJFDsE152eBJGnv6e4cK4PgCGFvw6u6NTAiUroG").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("8pDDReRZts1CkKdw1rcheSEc1N5V5JQcoqQgBu2koWen").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("65cLAJY4GLgiajWCktMg26ttSvH3yS4uoPbTysguSm85").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("JAviBzLr8kFptru4Uqwvp9kUYzr8HasZAizhqrh7czHe").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76").unwrap(),
         ];
         
         require!(kind < 4, SolXenError::BadParam);
@@ -86,16 +86,16 @@ pub mod sol_xen_minter {
         let mut buf: &[u8] = &ctx.accounts.user_record.try_borrow_mut_data()?[..];
         let user_record: UserSolXnRecord = UserSolXnRecord::try_deserialize(&mut buf)?;
         let points = user_record.points as u64;
-        print!("Total points {} for {}", points, ctx.accounts.user.key.to_string());
+        print!("Miner kind {}, total points {}", kind, points);
 
         let current_token_balance = ctx.accounts.user_tokens_record.tokens_minted as u64;
-        print!("Current balance {} for {}", current_token_balance, ctx.accounts.user.key.to_string());
 
         let token_account_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
         let points_to_mint = if points > ctx.accounts.user_tokens_record.points_counters[kind as usize] as u64
         { points - ctx.accounts.user_tokens_record.points_counters[kind as usize] as u64 } else
         { 0 };
-        // let total_points: u128 = ctx.accounts.user_tokens_record.points_counters.iter().sum();
+        print!("solXEN balance {}, new tokens to mint {}", current_token_balance, points_to_mint);
+
         if points_to_mint > 0 {
             // increment minted counter for user
             ctx.accounts.user_tokens_record.tokens_minted += points_to_mint as u128;

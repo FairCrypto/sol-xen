@@ -2,8 +2,9 @@ use anchor_lang::{
     prelude::*,
 };
 use sha3::{Digest, Keccak256};
+use ethaddr::Address;
 
-declare_id!("BSgU8KC6yNbany2cfPvYSHDVXNVxHgQAuifTSeo2kD99");
+declare_id!("8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -34,19 +35,24 @@ pub mod sol_xen_miner {
         Ok(())
     }
 
-    pub fn mine_hashes(ctx: Context<MineHashes>, _eth_account: EthAccount, _kind: u8) -> Result<()> {
+    pub fn mine_hashes(ctx: Context<MineHashes>, eth_account: EthAccount, _kind: u8) -> Result<()> {
+
+        // recover check-summed address from string and validate it
+        let maybe_eth_address = Address::from_str_checksum(&eth_account.address_str);
+        require!(maybe_eth_address.is_ok(), SolXenError::InvalidEthAddressChecksum);
+        require!(maybe_eth_address.unwrap().as_slice()[0..20] == eth_account.address.as_slice()[0..20], SolXenError::InvalidEthAddressData);
 
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
-        
+
         print!("Using slot #{}", slot);
 
         require!(slot > 0, SolXenError::ZeroSlotValue);
 
         // update global AMP state if required
-        if slot > ctx.accounts.global_xn_record.last_amp_slot 
-            && slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS 
-            && ctx.accounts.global_xn_record.amp > 0 
+        if slot > ctx.accounts.global_xn_record.last_amp_slot
+            && slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS
+            && ctx.accounts.global_xn_record.amp > 0
         {
             ctx.accounts.global_xn_record.amp -= 1;
             ctx.accounts.global_xn_record.last_amp_slot = slot;
@@ -54,23 +60,28 @@ pub mod sol_xen_miner {
 
         // Find hashes
         let nonce = ctx.accounts.global_xn_record.nonce;
-        print!("Hello nonce {:?}", nonce);
-
         let (hashes, superhashes) = find_hashes(slot, nonce);
 
-        // Calculate solXEN tokens
+        // Calculate points convertible to solXEN tokens
         let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64)
             + 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (SUPERHASH_X as u64) * (superhashes as u64);
-        
-        // Update user points by eth address
+        print!("Mined hashes {} superhashes {} points {} nonce {:?}", hashes, superhashes, points, nonce);
+
+        // Update user scores by eth address
         ctx.accounts.xn_by_eth.hashes += hashes as u64;
         ctx.accounts.xn_by_eth.superhashes += superhashes as u32;
 
-        // Update user points by sol address
+        // Update user scores by sol address
         ctx.accounts.xn_by_sol.hashes += hashes as u64;
         ctx.accounts.xn_by_sol.superhashes += superhashes as u32;
         ctx.accounts.xn_by_sol.points += points as u128;
-        
+
+        // Update miner's scores accumulators
+        ctx.accounts.global_xn_record.hashes += hashes as u64;
+        ctx.accounts.global_xn_record.superhashes += superhashes as u32;
+        ctx.accounts.global_xn_record.points += points as u128;
+
+        // calculate and store new nonce
         let mut hasher = Keccak256::new();
         hasher.update(ctx.accounts.user.key.to_bytes());
         hasher.update(hashes.to_le_bytes());
@@ -83,7 +94,7 @@ pub mod sol_xen_miner {
         emit!(HashEvent {
             slot,
             user: *ctx.accounts.user.key,
-            eth_account: _eth_account.address,
+            eth_account: eth_account.address,
             hashes,
             superhashes,
             points
@@ -115,7 +126,7 @@ pub struct InitMiner<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(_eth_account: EthAccount, kind: u8)]
+#[instruction(eth_account: EthAccount, kind: u8)]
 pub struct MineHashes<'info> {
     #[account(
         mut,
@@ -129,7 +140,7 @@ pub struct MineHashes<'info> {
         payer = user,
         seeds = [
             b"xn-by-eth",
-            _eth_account.address.as_ref(),
+            eth_account.address.as_ref(),
             kind.to_be_bytes().as_slice(),
             ID.as_ref(),
         ],
@@ -176,7 +187,10 @@ pub struct GlobalXnRecord {
     pub amp: u16,
     pub last_amp_slot: u64,
     pub nonce: [u8; 4],
-    pub kind: u8
+    pub kind: u8,
+    pub hashes: u64,
+    pub superhashes: u32,
+    pub points: u128
 }
 
 pub fn find_hashes(slot: u64, nonce: [u8; 4]) -> (u8, u8) {
@@ -207,8 +221,9 @@ pub fn find_hashes(slot: u64, nonce: [u8; 4]) -> (u8, u8) {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
- pub struct EthAccount {
-     pub address: [u8; 20],
+pub struct EthAccount {
+    pub address: [u8; 20],
+    pub address_str: String,
 }
 
 #[event]
@@ -230,5 +245,9 @@ pub enum SolXenError {
     #[msg("Slot value is Zero")]
     ZeroSlotValue,
     #[msg("Invalid miner kind")]
-    InvalidMinerKind
+    InvalidMinerKind,
+    #[msg("Invalid Ethereum address checksum")]
+    InvalidEthAddressChecksum,
+    #[msg("Ethereum address data doesnt match")]
+    InvalidEthAddressData,
 }
