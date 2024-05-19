@@ -124,7 +124,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
     let miners_program_ids_str= std::env::var("MINERS")
-        .unwrap_or(String::from("8pDDReRZts1CkKdw1rcheSEc1N5V5JQcoqQgBu2koWen,65cLAJY4GLgiajWCktMg26ttSvH3yS4uoPbTysguSm85,JAviBzLr8kFptru4Uqwvp9kUYzr8HasZAizhqrh7czHe,8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76"));
+        .unwrap_or(String::from("H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA,58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM,B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr,7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH"));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), 4, "Bad miners set");
 

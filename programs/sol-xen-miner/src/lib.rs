@@ -4,7 +4,7 @@ use anchor_lang::{
 use sha3::{Digest, Keccak256};
 use ethaddr::Address;
 
-declare_id!("8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76");
+declare_id!("7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
