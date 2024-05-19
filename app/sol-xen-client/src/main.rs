@@ -22,6 +22,8 @@ use dotenv::dotenv;
 use std::thread;
 use std::time::Duration;
 
+const MINERS: &str = "H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA,58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM,B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr,7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH";
+
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
     pub address: [u8; 20],
@@ -123,8 +125,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
-    let miners_program_ids_str= std::env::var("MINERS")
-        .unwrap_or(String::from("H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA,58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM,B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr,7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH"));
+    let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), 4, "Bad miners set");
 
@@ -272,8 +273,7 @@ fn do_mint(priority_fee: u64, kind: u8) {
     let program_id_minter_str = std::env::var("PROGRAM_ID_MINTER").expect("PROGRAM_ID must be set.");
     let program_id_minter = Pubkey::try_from(program_id_minter_str.as_str()).expect("Bad program ID");
 
-    let miners_program_ids_str= std::env::var("MINERS")
-        .unwrap_or(String::from("8pDDReRZts1CkKdw1rcheSEc1N5V5JQcoqQgBu2koWen,65cLAJY4GLgiajWCktMg26ttSvH3yS4uoPbTysguSm85,JAviBzLr8kFptru4Uqwvp9kUYzr8HasZAizhqrh7czHe,8mWTZtgTUK3nvyMirXxAh2GwcrjUbY9R6V94sn8ReT76"));
+    let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), 4, "Bad miners set");
 
