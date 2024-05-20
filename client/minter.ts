@@ -23,6 +23,7 @@ const U = '\x1b[39m';
 
 const decimals = new BN(1_000_000_000);
 
+
 async function main() {
     // PARSE CLI ARGS
 
@@ -30,6 +31,7 @@ async function main() {
     let cmd: Cmd;
     let priorityFee: number = 1;
     let kind: number;
+    let autoMint: number = 1000;
 
     const yArgs = yargs(hideBin(process.argv))
         .command(Cmd.Mint, 'Mint solXEN tokens based on your hash points balance')
@@ -46,6 +48,12 @@ async function main() {
             demandOption: true,
             description: 'Kind of miner (0, 1...)'
         })
+       .option('autoMint', {
+            alias: 'a',
+            type: 'number',
+            default: 1000,
+            description: 'Auto mint every N slots (0 == no auto mint)'
+        })
         .help()
         .parseSync()
 
@@ -59,6 +67,10 @@ async function main() {
 
     if (yArgs.priorityFee) {
         priorityFee = Number(yArgs.priorityFee)
+    }
+
+    if (yArgs.autoMint !== null && typeof yArgs.autoMint !== 'undefined') {
+        autoMint = Number(yArgs.autoMint)
     }
 
     if (yArgs.kind !== null && typeof yArgs.kind !== 'undefined') {
@@ -149,17 +161,9 @@ async function main() {
         owner: user.publicKey
     })
 
-    // PROCESS COMMANDS
+    let currentSlot = await connection.getSlot('confirmed');
 
-    if (cmd === Cmd.Balance) {
-
-        const totalSupply = await connection.getTokenSupply(mintAccount.address);
-        const userTokensRecord = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
-        console.log(`User balance: points=${G}${userTokensRecord.pointsCounters}${U}, tokens=${G}${userTokensRecord.tokensMinted}${U}, supply=${G}${totalSupply.value.uiAmount}${U}`)
-
-    } else if (cmd === Cmd.Mint) {
-
-        console.log(`Running minter with params: priorityFee=${G}${priorityFee}${U}`);
+    const doMint = async () => {
         const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: priorityFee
         });
@@ -190,7 +194,33 @@ async function main() {
         const delta = (userTokensRecord.tokensMinted.sub(userTokensRecordPre.tokensMinted).div(decimals)).toNumber();
         const deltaStr = delta > 0 ? `${Y}(+${delta})${U}` : '';
         const counters = userTokensRecord.pointsCounters.map(c => c.div(decimals).toNumber());
-        console.log(`User balance: points=${G}${counters}${U}, tokens=${G}${userTokensRecord.tokensMinted.div(decimals).toNumber()}${U}${deltaStr}. Total supply=${G}${totalSupply.value.uiAmount}${U}`)
+        console.log(`User balance @slot=${Y}${currentSlot}${U}: points=${G}${counters}${U}, tokens=${G}${userTokensRecord.tokensMinted.div(decimals).toNumber()}${U}${deltaStr}. Total supply=${G}${totalSupply.value.uiAmount}${U}`)
+    }
+
+    // PROCESS COMMANDS
+
+    if (cmd === Cmd.Balance) {
+
+        const totalSupply = await connection.getTokenSupply(mintAccount.address);
+        const userTokensRecord = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
+        console.log(`User balance: points=${G}${userTokensRecord.pointsCounters}${U}, tokens=${G}${userTokensRecord.tokensMinted}${U}, supply=${G}${totalSupply.value.uiAmount}${U}`)
+
+    } else if (cmd === Cmd.Mint && autoMint === 0 /* auto-mint disabled */) {
+
+        console.log(`Running single mint with params: priorityFee=${G}${priorityFee}${U}`);
+        await doMint();
+
+    } else if (cmd === Cmd.Mint && autoMint > 0 /* auto-mint enabled */) {
+
+        console.log(`Running auto mint with params: priorityFee=${G}${priorityFee}${U}, interval=${G}${autoMint}${U} slots`);
+        await doMint();
+
+        connection.onSlotChange(async ({ slot }) => {
+            if (slot - currentSlot >= autoMint) {
+                currentSlot = slot;
+                await doMint();
+            }
+        })
 
     } else {
         console.error('Unknown command:', cmd)
