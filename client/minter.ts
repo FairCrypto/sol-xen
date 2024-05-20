@@ -102,8 +102,17 @@ async function main() {
         const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
         user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
         console.log(`Using user wallet ${G}${user.publicKey.toBase58()}${U}`);
+    } else if (process.env.USER_WALLET_PATH) {
+        // normalize path
+        const walletPath = process.env.USER_WALLET_PATH.endsWith("/")
+            ? process.env.USER_WALLET_PATH
+            : process.env.USER_WALLET_PATH + '/';
+        const userKeyPairFileName = `${walletPath}id${kind}.json`;
+        const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
+        user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
+        console.log(`Using user wallet ${G}${user.publicKey.toBase58()}${U}`);
     } else {
-        console.error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file')
+        console.error('User wallet not provided or not found. \nSet USER_WALLET=/path/to/id.json or \nSet USER_WALLET_PATH=/path/to/all/wallets/ to map to "kind" param in .env file')
         process.exit(1);
     }
 
