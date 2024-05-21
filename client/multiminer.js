@@ -191,7 +191,7 @@ async function main() {
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
         if (isMainThread) {
             for (const [currentKind] of Object.entries(contexts)) {
-                const worker = new Worker('./client/runner.ts', {
+                const worker = new Worker('./client/runner.js', {
                     stdout: true,
                     stderr: true,
                     workerData: {

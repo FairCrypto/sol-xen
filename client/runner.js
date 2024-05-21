@@ -1,7 +1,7 @@
 import { parentPort, workerData, threadId } from 'node:worker_threads';
 import { AnchorProvider, setProvider, Wallet, web3, workspace } from "@coral-xyz/anchor";
 import { ComputeBudgetProgram, LAMPORTS_PER_SOL, TransactionExpiredTimeoutError } from "@solana/web3.js";
-import { getPDAs } from "./multiminer";
+import { getPDAs } from "./multiminer.js";
 import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
