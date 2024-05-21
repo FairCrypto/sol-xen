@@ -329,13 +329,9 @@ async function main() {
             const run = currentRun;
             const currentKindIdx = kind || (run % Object.keys(contexts).length);
             const currentKind = Number(Object.keys(contexts)[currentKindIdx]);
-            // console.log("current kind", currentKind)
             const currentContext = Object.values(contexts)[currentKindIdx] as Context;
-            // console.log("current ctx", currentContext.wallet.publicKey.toBase58())
             let program = currentContext.program;
-            const programId = program.programId; //  miners[kind || currentKind];
-            // setProvider(currentContext.provider);
-            // console.log(program.provider.connection.rpcEndpoint, programId.toBase58(), program.programId.toBase58())
+            const programId = program.programId; //  miners[kind || currentKind];)
 
             const {
                 globalXnRecordAddress,
@@ -361,42 +357,45 @@ async function main() {
                 address: Array.from(ethAddress20),
                 addressStr: address
             };
-            const mintTx = await program.methods.mineHashes(ethAddr, currentKind)
+            program.methods.mineHashes(ethAddr, currentKind)
                 .accounts(mintAccounts)
                 .signers([currentContext.wallet.payer])
                 .preInstructions([modifyComputeUnits, addPriorityFee])
-                .rpc({ commitment: "processed" });
-            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+                .rpc({ commitment: "processed" })
+                .then(async mintTx => {
+                    /*
+                    connection.onSignature(mintTx, (...params) => {
+                        readline.moveCursor(process.stdout, 0, run - currentRun);
+                        readline.cursorTo(process.stdout, 1);
+                        process.stdout.write(`.`);
+                        readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                        console.log();
+                    }, 'processed')
+                    connection.onSignature(mintTx, (...params) => {
+                        readline.moveCursor(process.stdout, 0, run - currentRun);
+                        readline.cursorTo(process.stdout, 1);
+                        process.stdout.write(`.`);
+                        readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                        console.log();
+                    }, 'confirmed')
+                    connection.onSignature(mintTx, (...params) => {
+                        readline.moveCursor(process.stdout, 0, run - currentRun);
+                        readline.cursorTo(process.stdout, 1);
+                        process.stdout.write(`X`);
+                        readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                        console.log();
+                        if (run === runs) {
+                            console.log(run, runs)
+                            process.exit(0);
+                        }
+                    }, 'finalized')
+                    */
+                    const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
+                    // process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, kind=${Y}${currentKind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
+                    process.stdout.write(`Tx=${Y}${mintTx}${U}, kind=${Y}${currentKind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
+                    currentRun++;
+                }).then(_ => new Promise(resolve => setTimeout(resolve, delay * 1000)));
 
-            connection.onSignature(mintTx, (...params) => {
-                readline.moveCursor(process.stdout, 0, run - currentRun);
-                readline.cursorTo(process.stdout, 1);
-                process.stdout.write(`.`);
-                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-                console.log();
-            }, 'processed')
-            connection.onSignature(mintTx, (...params) => {
-                readline.moveCursor(process.stdout, 0, run - currentRun);
-                readline.cursorTo(process.stdout, 1);
-                process.stdout.write(`.`);
-                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-                console.log();
-            }, 'confirmed')
-            connection.onSignature(mintTx, (...params) => {
-                readline.moveCursor(process.stdout, 0, run - currentRun);
-                readline.cursorTo(process.stdout, 1);
-                process.stdout.write(`X`);
-                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-                console.log();
-                if (run === runs) {
-                    console.log(run, runs)
-                    process.exit(0);
-                }
-            }, 'finalized')
-
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, kind=${Y}${currentKind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
-            currentRun++;
         }
         await new Promise(resolve => setTimeout(resolve, 30_000))
     } else {
