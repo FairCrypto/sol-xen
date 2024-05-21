@@ -4,7 +4,7 @@ import {hideBin} from 'yargs/helpers';
 import { getAddress, isAddress } from 'viem';
 import readline from 'readline'
 
-import {ComputeBudgetProgram, LAMPORTS_PER_SOL} from '@solana/web3.js';
+import {ComputeBudgetProgram, ConfirmOptions, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace,} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
@@ -163,11 +163,21 @@ async function main() {
 
     // Update this to the ID of your deployed program
     const wallet = new Wallet(user);
+
     // Create and set the provider
+    const anchorOptions = {
+        // ...AnchorProvider.defaultOptions(),
+        skipPreflight: false,
+        commitment: 'processed',
+        preflightCommitment: 'processed',
+        maxRetries: 10,
+        // minContextSlot: 0
+    } as ConfirmOptions
+
     const provider = new AnchorProvider(
         connection,
         wallet,
-        // AnchorProvider.defaultOptions(),
+        anchorOptions
     );
     setProvider(provider);
 
@@ -256,33 +266,41 @@ async function main() {
                 programId
             };
             const ethAddr = { address: Array.from(ethAddress20), addressStr: address };
-            const mintTx = await program.methods.mineHashes(ethAddr, kind)
-                .accounts(mintAccounts)
-                .signers([user])
-                .preInstructions([modifyComputeUnits, addPriorityFee])
-                .rpc({ commitment: "processed", skipPreflight: true });
-            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            try {
+                process.stdout.write(`[ ] Waiting for tx\r`);
+                currentRun++;
+                const mintTx = await program.methods.mineHashes(ethAddr, kind)
+                    .accounts(mintAccounts)
+                    .signers([user])
+                    .preInstructions([modifyComputeUnits, addPriorityFee])
+                    .rpc(anchorOptions);
 
-            // connection.onSignature(mintTx, (...params) => {
-            //    readline.moveCursor(process.stdout, 0, run - currentRun);
-            //    readline.cursorTo(process.stdout, 1);
-            //    process.stdout.write(`.`);
-            //    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-            // }, 'confirmed')
-            connection.onSignature(mintTx, (...params) => {
-                readline.moveCursor(process.stdout, 0, run - currentRun);
-                readline.cursorTo(process.stdout, 1);
-                process.stdout.write(`X`);
-                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-                console.log();
-                if (run === runs) {
-                    process.exit(0);
-                }
-            }, 'finalized')
+                /*
+                connection.onSignature(mintTx, (...params) => {
+                    readline.moveCursor(process.stdout, 0, run - currentRun);
+                    readline.cursorTo(process.stdout, 1);
+                    process.stdout.write(`.`);
+                    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                }, 'singleGossip')
+                 */
+                connection.onSignature(mintTx, (...params) => {
+                    readline.moveCursor(process.stdout, 0, run - currentRun);
+                    readline.cursorTo(process.stdout, 1);
+                    process.stdout.write(`X`);
+                    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                    console.log();
+                    if (run === runs) {
+                        process.exit(0);
+                    }
+                }, 'finalized')
 
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, kind=${Y}${kind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
-            currentRun++;
+                const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
+                process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, kind=${Y}${kind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
+                await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            } catch (e) {
+                process.stdout.write(`[-] Skipped due to timeout\n`);
+                // console.log();
+            }
         }
         await new Promise(resolve => setTimeout(resolve, 30_000))
     } else {
