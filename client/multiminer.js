@@ -52,6 +52,7 @@ async function main() {
     let runs = null;
     let kind = null;
     let delay = 1;
+    let autoMint = 1000;
     const yArgs = yargs(hideBin(process.argv))
         .command(Cmd.Mine, 'Mines points, redeemable for solXEN tokens, by looking for hash patterns')
         // .command(Cmd.Balance, 'Checks balance of a current account')
@@ -90,6 +91,12 @@ async function main() {
         demandOption: true,
         description: 'Delay between txs'
     })
+        .option('autoMint', {
+        alias: 'a',
+        type: 'number',
+        default: 1000,
+        description: 'Auto mint every N slots (0 == no auto mint)'
+    })
         .help()
         .parseSync();
     cmd = yArgs._[0];
@@ -116,6 +123,9 @@ async function main() {
     }
     if (yArgs.delay) {
         delay = Number(yArgs.delay);
+    }
+    if (yArgs.autoMint !== null && typeof yArgs.autoMint !== 'undefined') {
+        autoMint = Number(yArgs.autoMint);
     }
     if (yArgs.address) {
         try {
@@ -191,7 +201,8 @@ async function main() {
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
         if (isMainThread) {
             for (const [currentKind] of Object.entries(contexts)) {
-                const worker = new Worker('./client/runner.js', {
+                // launch miner runners
+                const runner = new Worker('./client/runner.js', {
                     stdout: true,
                     stderr: true,
                     workerData: {
@@ -203,14 +214,36 @@ async function main() {
                         units
                     },
                 });
-                worker.on("message", console.log);
-                worker.on("error", console.error);
-                worker.on("exit", (code) => {
+                runner.on("message", console.log);
+                runner.on("error", console.error);
+                runner.on("exit", (code) => {
                     if (code !== 0)
-                        console.error(`Worker stopped with exit code ${code}`);
+                        console.error(`Runner stopped with exit code ${code}`);
                     else
-                        console.log('Worker exited');
+                        console.log('Runner exited');
                 });
+                if (autoMint > 0) {
+                    // launch autominters
+                    const autoMinter = new Worker('./client/autominter.js', {
+                        stdout: true,
+                        stderr: true,
+                        workerData: {
+                            kind: Number(currentKind),
+                            autoMint,
+                            priorityFee,
+                            minerProgramId: miners[Number(currentKind)].toBase58(),
+                            startSlot: await connection.getSlot('confirmed')
+                        },
+                    });
+                    autoMinter.on("message", console.log);
+                    autoMinter.on("error", console.error);
+                    autoMinter.on("exit", (code) => {
+                        if (code !== 0)
+                            console.error(`Auto-Minter stopped with exit code ${code}`);
+                        else
+                            console.log('Auto-Minter exited');
+                    });
+                }
             }
         }
     }

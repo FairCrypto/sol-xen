@@ -6,7 +6,7 @@ import {SolXenMiner as TMiner0} from '../target/types/sol_xen_miner_0';
 import {SolXenMiner as TMiner1} from '../target/types/sol_xen_miner_1';
 import {SolXenMiner as TMiner2} from '../target/types/sol_xen_miner_2';
 import {SolXenMiner as TMiner3} from '../target/types/sol_xen_miner_3';
-import {ComputeBudgetProgram, LAMPORTS_PER_SOL, TransactionExpiredTimeoutError} from "@solana/web3.js";
+import {ComputeBudgetProgram, TransactionExpiredTimeoutError} from "@solana/web3.js";
 import {getPDAs} from "./multiminer";
 import fs from "node:fs";
 import path from "node:path";
@@ -31,11 +31,10 @@ const U = '\x1b[39m';
 
 // parentPort?.postMessage({...workerData, threadId})
 let currentRun = 1;
-const { kind = 1, runs, address, delay = 0.5, priorityFee = 100000, units } = workerData || {};
+const { kind = 1, runs, address, delay = 0.5, priorityFee = 100000, units } = workerData as RunnerParams || {};
 
 const i = kind;
 const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
-console.log(`${threadId}: Running on ${G}${network}${U}`)
 const connection = new web3.Connection(network, 'processed');
 
 const walletPath = process.env.USER_WALLET_PATH?.endsWith("/")
@@ -44,8 +43,6 @@ const walletPath = process.env.USER_WALLET_PATH?.endsWith("/")
 const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
 const keypair = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)))
 const wallet = new Wallet(keypair) as NodeWallet;
-const balance = await connection.getBalance(wallet.publicKey).then((b) => b / LAMPORTS_PER_SOL);
-// console.log(`Using user Wallet #${i} ${G}${keypair.publicKey.toBase58()}${U} (auto-mapped), balance=${G}${balance}${U}`);
 const provider = new AnchorProvider(
     connection,
     wallet,
@@ -63,7 +60,7 @@ if (i === 0) {
     program = workspace.SolXenMiner3 as Program<TMiner3>;
 }
 
-parentPort?.postMessage(`Runner #${threadId}: Miner PID=${program.programId.toBase58()}`);
+parentPort?.postMessage(`Runner #${threadId}: Miner PID=${program.programId.toBase58()}, kind=${kind}`);
 
 const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
     units
