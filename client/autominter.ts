@@ -89,7 +89,12 @@ connection.onSlotChange(async ({ slot }) => {
         });
 
         // const totalSupplyPre = await connection.getTokenSupply(mintAccount.address);
-        const userTokensRecordPre = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
+        let userTokensRecordPre: any = null;
+        try {
+            userTokensRecordPre = await program.account.userTokensRecord.fetch(userTokenRecordAccount);
+        } catch (_) {
+            // skip
+        }
 
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
 
@@ -113,7 +118,9 @@ connection.onSlotChange(async ({ slot }) => {
                     .then(totalSupply => {
                         return program.account.userTokensRecord.fetch(userTokenRecordAccount)
                             .then(userTokensRecord => {
-                                const delta = (userTokensRecord.tokensMinted.sub(userTokensRecordPre.tokensMinted).div(decimals)).toNumber();
+                                const delta = userTokensRecordPre
+                                    ? (userTokensRecord.tokensMinted.sub(userTokensRecordPre.tokensMinted).div(decimals)).toNumber()
+                                    : 0;
                                 const deltaStr = delta > 0 ? `${Y}(+${delta})${U}` : '';
                                 const counters = userTokensRecord.pointsCounters.map(c => c.div(decimals).toNumber());
                                 parentPort?.postMessage(`AM #${threadId}: balance @slot=${Y}${currentSlot}${U}: points=${G}${counters}${U}, tokens=${G}${userTokensRecord.tokensMinted.div(decimals).toNumber()}${U}${deltaStr}. Total supply=${G}${totalSupply.value.uiAmount}${U}`)
