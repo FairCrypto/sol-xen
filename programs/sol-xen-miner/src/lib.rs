@@ -1,17 +1,10 @@
 use anchor_lang::{
     prelude::*,
 };
-use anchor_spl::{
-    token::{Token, Mint, MintTo, TokenAccount},
-    metadata::{create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, mpl_token_metadata},
-    token::{mint_to},
-    associated_token::AssociatedToken,
-};
 use sha3::{Digest, Keccak256};
-use std::mem::size_of;
-use mpl_token_metadata::{types::DataV2};
+use ethaddr::Address;
 
-declare_id!("7LBe4g8Q6hq8Sk1nT8tQUiz2mCHjsoQJbmZ7zCQtutuT");
+declare_id!("7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -24,112 +17,71 @@ const AMP_CYCLE_SLOTS: u64 = 5_000;
 // const ADMIN_KEY: &str = "somesecretadminkey";
 
 #[program]
-pub mod sol_xen {
+pub mod sol_xen_miner {
     use super::*;
 
-    pub fn create_mint(ctx: Context<InitTokenMint>, metadata: InitTokenParams) -> Result<()> {
+    pub fn init_miner(ctx: Context<InitMiner>, kind: u8) -> Result<()> {
 
         msg!("Global last slot check: {}", ctx.accounts.global_xn_record.last_amp_slot);
         require!(ctx.accounts.global_xn_record.last_amp_slot == 0, SolXenError::MintIsAlreadyActive);
+        require!(kind < 4, SolXenError::InvalidMinerKind);
 
         // initialize global state
+        ctx.accounts.global_xn_record.kind = kind;
         ctx.accounts.global_xn_record.amp = AMP_START;
         ctx.accounts.global_xn_record.last_amp_slot = Clock::get().unwrap().slot;
         ctx.accounts.global_xn_record.nonce = ctx.accounts.admin.key.to_bytes()[0..4].try_into().unwrap();
 
-        let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
-        let signer = [&seeds[..]];
-
-        let token_data: DataV2 = DataV2 {
-            name: metadata.name,
-            symbol: metadata.symbol,
-            uri: metadata.uri,
-            seller_fee_basis_points: 0,
-            creators: None,
-            collection: None,
-            uses: None,
-        };
-
-        let metadata_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_metadata_program.to_account_info(),
-            CreateMetadataAccountsV3 {
-                payer: ctx.accounts.admin.to_account_info(),
-                update_authority: ctx.accounts.admin.to_account_info(),
-                mint: ctx.accounts.mint_account.to_account_info(),
-                metadata: ctx.accounts.metadata.to_account_info(),
-                mint_authority: ctx.accounts.mint_account.to_account_info(),
-                system_program: ctx.accounts.system_program.to_account_info(),
-                rent: ctx.accounts.rent.to_account_info(),
-            },
-            &signer
-        );
-
-        create_metadata_accounts_v3(
-            metadata_ctx,
-            token_data,
-            false,
-            true,
-            None,
-        )?;
-
         Ok(())
     }
 
-    pub fn mint_tokens(ctx: Context<MintTokens>, _eth_account: EthAccount) -> Result<()> {
+    pub fn mine_hashes(ctx: Context<MineHashes>, eth_account: EthAccount, _kind: u8) -> Result<()> {
+
+        // recover check-summed address from string and validate it
+        let maybe_eth_address = Address::from_str_checksum(&eth_account.address_str);
+        require!(maybe_eth_address.is_ok(), SolXenError::InvalidEthAddressChecksum);
+        require!(maybe_eth_address.unwrap().as_slice()[0..20] == eth_account.address.as_slice()[0..20], SolXenError::InvalidEthAddressData);
 
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
-        
+
         print!("Using slot #{}", slot);
 
         require!(slot > 0, SolXenError::ZeroSlotValue);
 
         // update global AMP state if required
-        if slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS && ctx.accounts.global_xn_record.amp > 0 {
+        if slot > ctx.accounts.global_xn_record.last_amp_slot
+            && slot - ctx.accounts.global_xn_record.last_amp_slot > AMP_CYCLE_SLOTS
+            && ctx.accounts.global_xn_record.amp > 0
+        {
             ctx.accounts.global_xn_record.amp -= 1;
             ctx.accounts.global_xn_record.last_amp_slot = slot;
         }
 
         // Find hashes
         let nonce = ctx.accounts.global_xn_record.nonce;
-        print!("Hello nonce {:?}", nonce);
-
         let (hashes, superhashes) = find_hashes(slot, nonce);
 
-        // Calculate solXEN tokens
+        // Calculate points convertible to solXEN tokens
         let points = 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (hashes as u64)
             + 1_000_000_000 * (ctx.accounts.global_xn_record.amp as u64) * (SUPERHASH_X as u64) * (superhashes as u64);
+        print!("Mined hashes {} superhashes {} points {} nonce {:?}", hashes, superhashes, points, nonce);
 
-        // Mint solXEN tokens to user
-        if points > 0 {
-            let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
-            mint_to(
-                CpiContext::new_with_signer(
-                    ctx.accounts.token_program.to_account_info(),
-                    MintTo {
-                        mint: ctx.accounts.mint_account.to_account_info(),
-                        authority: ctx.accounts.mint_account.to_account_info(),
-                        to: ctx.accounts.user_token_account.to_account_info(),
-                    },
-                    signer_seeds
-                ), // using PDA to sign
-                points,
-            )?;
-        }
-
-        // Update user points by eth address
+        // Update user scores by eth address
         ctx.accounts.xn_by_eth.hashes += hashes as u64;
         ctx.accounts.xn_by_eth.superhashes += superhashes as u32;
 
-        // Update user points by sol address
+        // Update user scores by sol address
         ctx.accounts.xn_by_sol.hashes += hashes as u64;
         ctx.accounts.xn_by_sol.superhashes += superhashes as u32;
         ctx.accounts.xn_by_sol.points += points as u128;
 
-        // Update global points
+        // Update miner's scores accumulators
         ctx.accounts.global_xn_record.hashes += hashes as u64;
-        ctx.accounts.global_xn_record.superhashes += superhashes as u64;
-        ctx.accounts.global_xn_record.txs += 1;
+        ctx.accounts.global_xn_record.superhashes += superhashes as u32;
+        ctx.accounts.global_xn_record.points += points as u128;
+
+        // calculate and store new nonce
         let mut hasher = Keccak256::new();
         hasher.update(ctx.accounts.user.key.to_bytes());
         hasher.update(hashes.to_le_bytes());
@@ -142,7 +94,7 @@ pub mod sol_xen {
         emit!(HashEvent {
             slot,
             user: *ctx.accounts.user.key,
-            eth_account: _eth_account.address,
+            eth_account: eth_account.address,
             hashes,
             superhashes,
             points
@@ -155,103 +107,74 @@ pub mod sol_xen {
 // TODO 1: add checks to lock this method to a specific (admin) Key
 // TODO 2: after the Token Mint is launched, remove authority from it (First Principles)
 // DONE 3: add metadata support (https://github.com/solana-developers/program-examples/blob/main/tokens/pda-mint-authority/anchor/programs/token-minter/src/instructions/create.rs)
+
 #[derive(Accounts)]
-#[instruction(params: InitTokenParams)]
-pub struct InitTokenMint<'info> {
+#[instruction(kind: u8)]
+pub struct InitMiner<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<GlobalXnRecord>(),
-        seeds = [b"xn-global-counter"],
+        space = 8 + GlobalXnRecord::INIT_SPACE,
+        seeds = [b"xn-miner-global", kind.to_be_bytes().as_slice()],
         bump,
         payer = admin,
     )]
     pub global_xn_record: Box<Account<'info, GlobalXnRecord>>,
-    #[account(
-        init_if_needed,
-        seeds = [b"mint"],
-        bump,
-        payer = admin,
-        mint::decimals = params.decimals,
-        mint::authority = mint_account.key(),
-        mint::freeze_authority = mint_account.key(),
-    )]
-    pub mint_account: Account<'info, Mint>,
-    /// CHECK: Address validated using constraint
-    #[account(mut)]
-    pub metadata: UncheckedAccount<'info>,
-    pub token_program: Program<'info, Token>,
-    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
-pub struct InitTokenParams {
-    pub name: String,
-    pub symbol: String,
-    pub uri: String,
-    pub decimals: u8,
-}
-
 #[derive(Accounts)]
-#[instruction(_eth_account: EthAccount)]
-pub struct MintTokens<'info> {
-    #[account(
-        init_if_needed,
-        payer = user,
-        associated_token::mint = mint_account,
-        associated_token::authority = user,
-    )]
-    pub user_token_account: Box<Account<'info, TokenAccount>>,
+#[instruction(eth_account: EthAccount, kind: u8)]
+pub struct MineHashes<'info> {
     #[account(
         mut,
-        seeds = [b"xn-global-counter"],
+        seeds = [b"xn-miner-global", kind.to_be_bytes().as_slice()],
         bump,
     )]
     pub global_xn_record: Box<Account<'info, GlobalXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserEthXnRecord>(),
+        space = 8 + UserEthXnRecord::INIT_SPACE,
         payer = user,
         seeds = [
             b"xn-by-eth",
-            _eth_account.address.as_ref(),
+            eth_account.address.as_ref(),
+            kind.to_be_bytes().as_slice(),
+            ID.as_ref(),
         ],
         bump
     )]
     pub xn_by_eth: Box<Account<'info, UserEthXnRecord>>,
     #[account(
         init_if_needed,
-        space = 8 + size_of::<UserSolXnRecord>(),
+        space = 8 + UserSolXnRecord::INIT_SPACE,
         payer = user,
         seeds = [
             b"xn-by-sol",
             user.key().as_ref(),
+            kind.to_be_bytes().as_slice(),
+            ID.as_ref(),
         ],
         bump
     )]
     pub xn_by_sol: Box<Account<'info, UserSolXnRecord>>,
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(mut, seeds = [b"mint"], bump)]
-    pub mint_account: Account<'info, Mint>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     // pub rent: Sysvar<'info, Rent>,
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace,Debug)]
 pub struct UserEthXnRecord {
     pub hashes: u64,
     pub superhashes: u32,
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace,Debug)]
 pub struct UserSolXnRecord {
     pub hashes: u64,
     pub superhashes: u32,
@@ -259,14 +182,15 @@ pub struct UserSolXnRecord {
 }
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace,Debug)]
 pub struct GlobalXnRecord {
     pub amp: u16,
     pub last_amp_slot: u64,
+    pub nonce: [u8; 4],
+    pub kind: u8,
     pub hashes: u64,
-    pub superhashes: u64,
-    pub txs: u64,
-    pub nonce: [u8; 4]
+    pub superhashes: u32,
+    pub points: u128
 }
 
 pub fn find_hashes(slot: u64, nonce: [u8; 4]) -> (u8, u8) {
@@ -297,8 +221,9 @@ pub fn find_hashes(slot: u64, nonce: [u8; 4]) -> (u8, u8) {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
- pub struct EthAccount {
-     pub address: [u8; 20],
+pub struct EthAccount {
+    pub address: [u8; 20],
+    pub address_str: String,
 }
 
 #[event]
@@ -318,7 +243,11 @@ pub enum SolXenError {
     #[msg("solXEN Mint has not yet started or is over")]
     MintIsNotActive,
     #[msg("Slot value is Zero")]
-    ZeroSlotValue
+    ZeroSlotValue,
+    #[msg("Invalid miner kind")]
+    InvalidMinerKind,
+    #[msg("Invalid Ethereum address checksum")]
+    InvalidEthAddressChecksum,
+    #[msg("Ethereum address data doesnt match")]
+    InvalidEthAddressData,
 }
-
-

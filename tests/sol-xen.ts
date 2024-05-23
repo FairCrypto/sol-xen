@@ -7,7 +7,7 @@ import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
 dotenv.config();
 
-describe("sol-xen", () => {
+describe("sol-xen-miner", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 

@@ -1,23 +1,29 @@
-{
-  "address": "7LBe4g8Q6hq8Sk1nT8tQUiz2mCHjsoQJbmZ7zCQtutuT",
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/sol_xen_miner.json`.
+ */
+export type SolXenMiner = {
+  "address": "B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr",
   "metadata": {
-    "name": "sol_xen",
-    "version": "0.1.0",
+    "name": "solXenMiner",
+    "version": "0.1.0-epsilon",
     "spec": "0.1.0",
-    "description": "Created with Anchor"
+    "description": "solXEN Miner Program. Search for hash patterns, earn points"
   },
   "instructions": [
     {
-      "name": "create_mint",
+      "name": "initMiner",
       "discriminator": [
-        69,
-        44,
-        215,
-        132,
-        253,
-        214,
-        41,
-        45
+        144,
+        159,
+        202,
+        208,
+        234,
+        154,
+        242,
+        55
       ],
       "accounts": [
         {
@@ -26,7 +32,7 @@
           "signer": true
         },
         {
-          "name": "global_xn_record",
+          "name": "globalXnRecord",
           "writable": true,
           "pda": {
             "seeds": [
@@ -36,56 +42,29 @@
                   120,
                   110,
                   45,
+                  109,
+                  105,
+                  110,
+                  101,
+                  114,
+                  45,
                   103,
                   108,
                   111,
                   98,
                   97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  101,
-                  114
+                  108
                 ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
+              },
               {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116
-                ]
+                "kind": "arg",
+                "path": "kind"
               }
             ]
           }
         },
         {
-          "name": "metadata",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "token_metadata_program",
-          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
-        },
-        {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -95,34 +74,26 @@
       ],
       "args": [
         {
-          "name": "metadata",
-          "type": {
-            "defined": {
-              "name": "InitTokenParams"
-            }
-          }
+          "name": "kind",
+          "type": "u8"
         }
       ]
     },
     {
-      "name": "mint_tokens",
+      "name": "mineHashes",
       "discriminator": [
-        59,
-        132,
-        24,
-        246,
-        122,
-        39,
-        8,
-        243
+        192,
+        6,
+        168,
+        29,
+        123,
+        183,
+        150,
+        48
       ],
       "accounts": [
         {
-          "name": "user_token_account",
-          "writable": true
-        },
-        {
-          "name": "global_xn_record",
+          "name": "globalXnRecord",
           "writable": true,
           "pda": {
             "seeds": [
@@ -132,27 +103,29 @@
                   120,
                   110,
                   45,
+                  109,
+                  105,
+                  110,
+                  101,
+                  114,
+                  45,
                   103,
                   108,
                   111,
                   98,
                   97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  101,
-                  114
+                  108
                 ]
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
               }
             ]
           }
         },
         {
-          "name": "xn_by_eth",
+          "name": "xnByEth",
           "writable": true,
           "pda": {
             "seeds": [
@@ -172,13 +145,54 @@
               },
               {
                 "kind": "arg",
-                "path": "_eth_account.address"
+                "path": "eth_account.address"
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  255,
+                  33,
+                  162,
+                  163,
+                  84,
+                  6,
+                  84,
+                  73,
+                  111,
+                  243,
+                  36,
+                  222,
+                  177,
+                  255,
+                  230,
+                  12,
+                  158,
+                  236,
+                  155,
+                  132,
+                  25,
+                  106,
+                  88,
+                  152,
+                  55,
+                  70,
+                  139,
+                  122,
+                  106,
+                  157,
+                  91,
+                  225
+                ]
               }
             ]
           }
         },
         {
-          "name": "xn_by_sol",
+          "name": "xnBySol",
           "writable": true,
           "pda": {
             "seeds": [
@@ -199,6 +213,47 @@
               {
                 "kind": "account",
                 "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "kind"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  255,
+                  33,
+                  162,
+                  163,
+                  84,
+                  6,
+                  84,
+                  73,
+                  111,
+                  243,
+                  36,
+                  222,
+                  177,
+                  255,
+                  230,
+                  12,
+                  158,
+                  236,
+                  155,
+                  132,
+                  25,
+                  106,
+                  88,
+                  152,
+                  55,
+                  70,
+                  139,
+                  122,
+                  106,
+                  157,
+                  91,
+                  225
+                ]
               }
             ]
           }
@@ -209,50 +264,29 @@
           "signer": true
         },
         {
-          "name": "mint_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
         {
-          "name": "_eth_account",
+          "name": "ethAccount",
           "type": {
             "defined": {
-              "name": "EthAccount"
+              "name": "ethAccount"
             }
           }
+        },
+        {
+          "name": "kind",
+          "type": "u8"
         }
       ]
     }
   ],
   "accounts": [
     {
-      "name": "GlobalXnRecord",
+      "name": "globalXnRecord",
       "discriminator": [
         29,
         48,
@@ -265,7 +299,7 @@
       ]
     },
     {
-      "name": "UserEthXnRecord",
+      "name": "userEthXnRecord",
       "discriminator": [
         224,
         152,
@@ -278,7 +312,7 @@
       ]
     },
     {
-      "name": "UserSolXnRecord",
+      "name": "userSolXnRecord",
       "discriminator": [
         105,
         200,
@@ -293,7 +327,7 @@
   ],
   "events": [
     {
-      "name": "HashEvent",
+      "name": "hashEvent",
       "discriminator": [
         72,
         165,
@@ -309,23 +343,38 @@
   "errors": [
     {
       "code": 6000,
-      "name": "MintIsAlreadyActive",
+      "name": "mintIsAlreadyActive",
       "msg": "solXEN Mint has been already initialized"
     },
     {
       "code": 6001,
-      "name": "MintIsNotActive",
+      "name": "mintIsNotActive",
       "msg": "solXEN Mint has not yet started or is over"
     },
     {
       "code": 6002,
-      "name": "ZeroSlotValue",
+      "name": "zeroSlotValue",
       "msg": "Slot value is Zero"
+    },
+    {
+      "code": 6003,
+      "name": "invalidMinerKind",
+      "msg": "Invalid miner kind"
+    },
+    {
+      "code": 6004,
+      "name": "invalidEthAddressChecksum",
+      "msg": "Invalid Ethereum address checksum"
+    },
+    {
+      "code": 6005,
+      "name": "invalidEthAddressData",
+      "msg": "Ethereum address data doesnt match"
     }
   ],
   "types": [
     {
-      "name": "EthAccount",
+      "name": "ethAccount",
       "type": {
         "kind": "struct",
         "fields": [
@@ -337,12 +386,16 @@
                 20
               ]
             }
+          },
+          {
+            "name": "addressStr",
+            "type": "string"
           }
         ]
       }
     },
     {
-      "name": "GlobalXnRecord",
+      "name": "globalXnRecord",
       "type": {
         "kind": "struct",
         "fields": [
@@ -351,19 +404,7 @@
             "type": "u16"
           },
           {
-            "name": "last_amp_slot",
-            "type": "u64"
-          },
-          {
-            "name": "hashes",
-            "type": "u64"
-          },
-          {
-            "name": "superhashes",
-            "type": "u64"
-          },
-          {
-            "name": "txs",
+            "name": "lastAmpSlot",
             "type": "u64"
           },
           {
@@ -374,12 +415,28 @@
                 4
               ]
             }
+          },
+          {
+            "name": "kind",
+            "type": "u8"
+          },
+          {
+            "name": "hashes",
+            "type": "u64"
+          },
+          {
+            "name": "superhashes",
+            "type": "u32"
+          },
+          {
+            "name": "points",
+            "type": "u128"
           }
         ]
       }
     },
     {
-      "name": "HashEvent",
+      "name": "hashEvent",
       "type": {
         "kind": "struct",
         "fields": [
@@ -392,7 +449,7 @@
             "type": "pubkey"
           },
           {
-            "name": "eth_account",
+            "name": "ethAccount",
             "type": {
               "array": [
                 "u8",
@@ -416,31 +473,7 @@
       }
     },
     {
-      "name": "InitTokenParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "symbol",
-            "type": "string"
-          },
-          {
-            "name": "uri",
-            "type": "string"
-          },
-          {
-            "name": "decimals",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "UserEthXnRecord",
+      "name": "userEthXnRecord",
       "type": {
         "kind": "struct",
         "fields": [
@@ -456,7 +489,7 @@
       }
     },
     {
-      "name": "UserSolXnRecord",
+      "name": "userSolXnRecord",
       "type": {
         "kind": "struct",
         "fields": [
@@ -476,4 +509,4 @@
       }
     }
   ]
-}
+};

@@ -4,10 +4,9 @@ import { hideBin } from 'yargs/helpers';
 import { getAddress, isAddress } from 'viem';
 import readline from 'readline';
 import { ComputeBudgetProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { AnchorProvider, setProvider, web3, Wallet, workspace, utils } from '@coral-xyz/anchor';
+import { AnchorProvider, setProvider, web3, Wallet, workspace, } from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
-import { getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 dotenv.config();
 var Cmd;
 (function (Cmd) {
@@ -25,6 +24,8 @@ async function main() {
     let priorityFee = 1;
     let units = 1_200_000;
     let runs = 1;
+    let kind;
+    let delay = 1;
     const yArgs = yargs(hideBin(process.argv))
         .command(Cmd.Mine, 'Checks gas-related params returned by current network')
         .command(Cmd.Balance, 'Checks balance of a master account')
@@ -51,12 +52,37 @@ async function main() {
         default: 1,
         description: 'Number of runs'
     })
+        .option('kind', {
+        alias: 'k',
+        type: 'number',
+        default: 1,
+        demandOption: true,
+        description: 'Kind of miner (0, 1 ...)'
+    })
+        .option('delay', {
+        alias: 'd',
+        type: 'number',
+        default: 1,
+        demandOption: true,
+        description: 'Delay between txs'
+    })
         .help()
         .parseSync();
     cmd = yArgs._[0];
     if (!cmd && params.length === 0) {
         // @ts-ignore
         yArgs.help();
+        process.exit(1);
+    }
+    if (yArgs.kind !== null && typeof yArgs.kind !== 'undefined') {
+        kind = Number(yArgs.kind);
+        if (kind < 0 || kind > 3) {
+            console.log("Wrong kind");
+            process.exit(1);
+        }
+    }
+    else {
+        console.log("Kind param is required");
         process.exit(1);
     }
     if (yArgs.priorityFee) {
@@ -67,6 +93,9 @@ async function main() {
     }
     if (yArgs.runs) {
         runs = Number(yArgs.runs);
+    }
+    if (yArgs.delay) {
+        delay = Number(yArgs.delay);
     }
     if (yArgs.address) {
         try {
@@ -81,6 +110,10 @@ async function main() {
             process.exit(1);
         }
     }
+    const minersStr = process.env.MINERS
+        || 'H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA,58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM,B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr,7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH';
+    const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
+    const programId = miners[kind];
     // SETUP SOLANA ENVIRONMENT
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
     console.log(`\nRunning on ${G}${network}${U}`);
@@ -93,55 +126,82 @@ async function main() {
         user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
         console.log(`Using user wallet ${G}${user.publicKey.toBase58()}${U}`);
     }
+    else if (process.env.USER_WALLET_PATH) {
+        // normalize path
+        const walletPath = process.env.USER_WALLET_PATH.endsWith("/")
+            ? process.env.USER_WALLET_PATH
+            : process.env.USER_WALLET_PATH + '/';
+        const userKeyPairFileName = `${walletPath}id${kind}.json`;
+        const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
+        user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
+        console.log(`Using user wallet ${G}${user.publicKey.toBase58()}${U} (auto-mapped)`);
+    }
     else {
-        console.error('User wallet not provided or not found. Set USER_WALLET="path to id.json" in .env file');
+        console.error('User wallet not provided or not found. \nSet USER_WALLET=/path/to/id.json or \nSet USER_WALLET_PATH=/path/to/all/wallets/ to map to "kind" param in .env file');
         process.exit(1);
     }
     // Update this to the ID of your deployed program
     const wallet = new Wallet(user);
     // Create and set the provider
-    const provider = new AnchorProvider(connection, wallet);
+    const anchorOptions = {
+        // ...AnchorProvider.defaultOptions(),
+        skipPreflight: false,
+        commitment: 'processed',
+        preflightCommitment: 'processed',
+        maxRetries: 10,
+        // minContextSlot: 0
+    };
+    const provider = new AnchorProvider(connection, wallet, anchorOptions);
     setProvider(provider);
     // check balance
     console.log(`Block height=${G}${await connection.getBlockHeight()}${U}`);
     console.log(`SOL balance=${G}${await connection.getBalance(user.publicKey).then((b) => b / LAMPORTS_PER_SOL)}${U}`);
     // Load the program
-    const program = workspace.SolXen;
-    console.log(`Program ID=${G}${program.programId}${U}`);
+    let program;
+    if (kind === 0) {
+        program = workspace.SolXenMiner0;
+    }
+    else if (kind === 1) {
+        program = workspace.SolXenMiner1;
+    }
+    else if (kind === 2) {
+        program = workspace.SolXenMiner2;
+    }
+    else {
+        program = workspace.SolXenMiner3;
+    }
+    console.log(`Miner program ID=${G}${programId}${U}, Anchor program ID=${program.programId}`);
     const [globalXnRecordAddress] = web3.PublicKey.findProgramAddressSync([
-        Buffer.from("xn-global-counter"),
-    ], program.programId);
+        Buffer.from("xn-miner-global"),
+        Buffer.from([kind]),
+    ], programId);
     const ethAddress20 = Buffer.from(address.slice(2), 'hex');
     const [userEthXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-by-eth"),
         ethAddress20,
-    ], program.programId);
+        Buffer.from([kind]),
+        programId.toBuffer(),
+    ], programId);
     const [userSolXnRecordAccount] = web3.PublicKey.findProgramAddressSync([
         Buffer.from("xn-by-sol"),
         user.publicKey.toBuffer(),
-    ], program.programId);
-    const [mint] = web3.PublicKey.findProgramAddressSync([Buffer.from("mint")], program.programId);
-    const mintAccount = await getMint(provider.connection, mint);
-    const userTokenAccount = utils.token.associatedAddress({
-        mint: mintAccount.address,
-        owner: user.publicKey
-    });
+        Buffer.from([kind]),
+        programId.toBuffer(),
+    ], programId);
     // PROCESS COMMANDS
     if (cmd === Cmd.Balance) {
-        const totalSupply = await connection.getTokenSupply(mintAccount.address);
         const globalXnRecord = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
-        console.log(`Global state: txs=${G}${globalXnRecord.txs}${U}, hashes=${G}${globalXnRecord.hashes}${U}, superhashes=${G}${globalXnRecord.superhashes}${U}, supply=${G}${totalSupply.value.uiAmount}${U}, amp=${G}${globalXnRecord.amp}${U}`);
+        console.log(`Global state: amp=${G}${globalXnRecord.amp}${U}`);
         if (address) {
-            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
             const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            console.log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}, balance=${G}${userTokenBalance.value.uiAmount}${U}`);
+            console.log(`User state: hashes=${G}${userXnRecord.hashes}${U}, superhashes=${G}${userXnRecord.superhashes}${U}`);
         }
         else {
             console.log("to show user balance, run with --address YOUR_ETH_ADDRESS key");
         }
     }
     else if (cmd === Cmd.Mine) {
-        console.log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}`);
+        console.log(`Running miner with params: address=${G}${address}${U}, priorityFee=${G}${priorityFee}${U}, runs=${G}${runs}${U}, delay=${G}${delay}${U}`);
         console.log(`Using CU max=${G}${units}${U}`);
         const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
             units
@@ -155,40 +215,46 @@ async function main() {
             const globalXnRecordNew = await program.account.globalXnRecord.fetch(globalXnRecordAddress);
             const mintAccounts = {
                 user: user.publicKey,
-                mintAccount: mintAccount.address,
-                userTokenAccount,
                 xnByEth: userEthXnRecordAccount,
                 xnBySol: userSolXnRecordAccount,
                 globalXnRecord: globalXnRecordAddress,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                associateTokenProgram
+                programId
             };
-            const mintTx = await program.methods.mintTokens({ address: Array.from(ethAddress20) })
-                .accounts(mintAccounts)
-                .signers([user])
-                .preInstructions([modifyComputeUnits, addPriorityFee])
-                .rpc({ commitment: "processed", skipPreflight: true });
-            // connection.onSignature(mintTx, (...params) => {
-            //    readline.moveCursor(process.stdout, 0, run - currentRun);
-            //    readline.cursorTo(process.stdout, 1);
-            //    process.stdout.write(`.`);
-            //    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-            // }, 'confirmed')
-            connection.onSignature(mintTx, (...params) => {
-                readline.moveCursor(process.stdout, 0, run - currentRun);
-                readline.cursorTo(process.stdout, 1);
-                process.stdout.write(`X`);
-                readline.moveCursor(process.stdout, 0, currentRun - run - 1);
-                console.log();
-                if (run === runs) {
-                    process.exit(0);
-                }
-            }, 'finalized');
-            const userTokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-            const totalSupply = await connection.getTokenSupply(mintAccount.address);
-            const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
-            process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}, balance=${Y}${(userTokenBalance.value.uiAmount || 0).toLocaleString()}${U} supply=${Y}${(totalSupply.value.uiAmount || 0).toLocaleString()}${U}\n`);
-            currentRun++;
+            const ethAddr = { address: Array.from(ethAddress20), addressStr: address };
+            try {
+                process.stdout.write(`[ ] Waiting for tx\r`);
+                currentRun++;
+                const mintTx = await program.methods.mineHashes(ethAddr, kind)
+                    .accounts(mintAccounts)
+                    .signers([user])
+                    .preInstructions([modifyComputeUnits, addPriorityFee])
+                    .rpc(anchorOptions);
+                /*
+                connection.onSignature(mintTx, (...params) => {
+                    readline.moveCursor(process.stdout, 0, run - currentRun);
+                    readline.cursorTo(process.stdout, 1);
+                    process.stdout.write(`.`);
+                    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                }, 'singleGossip')
+                 */
+                connection.onSignature(mintTx, (...params) => {
+                    readline.moveCursor(process.stdout, 0, run - currentRun);
+                    readline.cursorTo(process.stdout, 1);
+                    process.stdout.write(`X`);
+                    readline.moveCursor(process.stdout, 0, currentRun - run - 1);
+                    console.log();
+                    if (run === runs) {
+                        process.exit(0);
+                    }
+                }, 'finalized');
+                const userXnRecord = await program.account.userEthXnRecord.fetch(userEthXnRecordAccount);
+                process.stdout.write(`[ ] Tx=${Y}${mintTx}${U}, kind=${Y}${kind}${U}, nonce=${Y}${Buffer.from(globalXnRecordNew.nonce).toString("hex")}${U}, hashes=${Y}${userXnRecord.hashes}${U}, superhashes=${Y}${userXnRecord.superhashes}${U}\n`);
+                await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            }
+            catch (e) {
+                process.stdout.write(`[-] Skipped due to timeout\n`);
+                // console.log();
+            }
         }
         await new Promise(resolve => setTimeout(resolve, 30_000));
     }

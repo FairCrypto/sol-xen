@@ -3,11 +3,12 @@
     "typeRoots": ["./node_modules/@types"],
     "strict": true,
     "esModuleInterop": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "WebWorker", "scripthost"],
     "module": "ESNext",
     "moduleResolution": "node",
     "target": "ESNext",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   },
   "exclude": [
     "./node_modules"

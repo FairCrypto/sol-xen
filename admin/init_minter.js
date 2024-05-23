@@ -20,30 +20,8 @@ async function main() {
     console.log('Block height:', await connection.getBlockHeight());
     console.log('Balance:', await connection.getBalance(keyPair.publicKey));
     // Load the program
-    const program = workspace.SolXen;
-    // Load or create a random account for a test user
-    let user;
-    if (process.env.USER_WALLET) {
-        const userKeyPairFileName = process.env.USER_WALLET;
-        const userKeyPairString = fs.readFileSync(path.resolve(userKeyPairFileName), 'utf-8');
-        user = web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(userKeyPairString)));
-        console.log('Using user wallet', user.publicKey.toBase58());
-    }
-    else {
-        user = web3.Keypair.generate();
-        console.log('Using random user', user.publicKey.toBase58());
-    }
-    // send user some lamports
-    const tx2 = new web3.Transaction().add(web3.SystemProgram.transfer({
-        fromPubkey: keyPair.publicKey,
-        toPubkey: user.publicKey,
-        lamports: web3.LAMPORTS_PER_SOL,
-    }));
-    // Sign transaction, broadcast, and confirm
-    const sig2 = await web3.sendAndConfirmTransaction(connection, tx2, [keyPair]);
-    console.log('Tx2 hash', sig2);
-    console.log('Admin Balance:', await connection.getBalance(keyPair.publicKey));
-    console.log('User Balance:', await connection.getBalance(user.publicKey));
+    const program = workspace.SolXenMinter;
+    console.log('Program ID:', program.programId.toBase58());
     const METADATA_SEED = "metadata";
     const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
     const [mint] = web3.PublicKey.findProgramAddressSync([Buffer.from("mint")], program.programId);
@@ -54,17 +32,20 @@ async function main() {
     ], TOKEN_METADATA_PROGRAM_ID);
     const createAccounts = {
         admin: provider.wallet.publicKey,
-        metadata: metadataAddress,
+        // metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
     };
     const metadata = {
-        name: "solXEN (delta)",
-        symbol: "solXENd2",
+        name: "solXEN (epsilon)",
+        symbol: "solXENe2",
         uri: "",
         decimals: 9,
     };
     // Send the mint transaction (as Admin)
-    const hash = await program.methods.createMint(metadata).accounts(createAccounts).signers([]).rpc();
+    const hash = await program.methods.createMint(metadata)
+        .accounts(createAccounts)
+        .signers([])
+        .rpc();
     console.log('Create Mint tx hash', hash);
     const mintAccount = await getMint(provider.connection, mint);
     console.log(mintAccount.address.toBase58());
