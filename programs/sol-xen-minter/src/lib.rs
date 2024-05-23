@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("8HTvrqZT1JP279DMLT5SfNfGHxUeznem4Bh7zy92sWWx");
+declare_id!("7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -61,10 +61,10 @@ pub mod sol_xen_minter {
         
     pub fn mint_tokens(ctx: Context<MintTokens>, kind: u8) -> Result<()> {
         let miners = vec![
-            solana_program::pubkey::Pubkey::try_from("H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w").unwrap(),
+            solana_program::pubkey::Pubkey::try_from("6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW").unwrap(),
         ];
         
         require!(kind < 4, SolXenError::BadParam);

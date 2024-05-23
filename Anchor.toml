@@ -13,7 +13,8 @@ sol_xen_minter = "3JSyo6R489DcXedDYQUY7XbGXsmCz4mQH7sWeK5VE8vA"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "http://69.10.34.226:8899"
+cluster = "http://207.188.7.32:8899"
+# cluster = "http://69.10.34.226:8899"
 # cluster = "devnet"
 # cluster = "localnet"
 wallet = "~/.config/solana/id.json"

@@ -129,7 +129,7 @@ async function main() {
     }
 
     const minersStr = process.env.MINERS
-        || 'H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA,58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM,B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr,7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH';
+        || '5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw,HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y,FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w,6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW';
 
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
     const programId = miners[kind];
