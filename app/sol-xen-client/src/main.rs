@@ -22,7 +22,7 @@ use dotenv::dotenv;
 use std::thread;
 use std::time::Duration;
 
-const MINERS: &str = "bqUMbXiee6zhZXPBRgF4zcLg4G58tzW4KF9r4XSRTtD,8GT9DroFTv3YT8tDWrRNH1RQ9pSyLz5rUYTbLgs5ypXL,9L6C4boswfrjS1vPCfMB3L4g73g42sECHAMY5Tf9jsc1,AnvbdsFZQWRRNQtUv8G2v8MtQxdizRT4ZQZbGLYuG1cF";
+const MINERS: &str = "CFRDmC2xPN7K2D8GadHKpcwSAC5YvPzPjbjYA6v439oi,7vQ9pG7MUjkswNkL96XiiYbz3swM9dkqgMEAbgDaLggi,DpLx72BXVhZN6hkA6LKKres3EUKvK36mmh5JaKyaVSYU,7u5D7qPHGZHXQ3nQTeZu5eFKtKGKQWKhJCdM1B3T4Ly4";
 
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {

@@ -26,9 +26,9 @@ use std::time::Duration;
 use solana_sdk::clock::Slot;
 use solana_sdk::signature::Keypair;
 
-const MINERS: &str = "bqUMbXiee6zhZXPBRgF4zcLg4G58tzW4KF9r4XSRTtD,8GT9DroFTv3YT8tDWrRNH1RQ9pSyLz5rUYTbLgs5ypXL,9L6C4boswfrjS1vPCfMB3L4g73g42sECHAMY5Tf9jsc1,AnvbdsFZQWRRNQtUv8G2v8MtQxdizRT4ZQZbGLYuG1cF";
+const MINERS: &str = "CFRDmC2xPN7K2D8GadHKpcwSAC5YvPzPjbjYA6v439oi,7vQ9pG7MUjkswNkL96XiiYbz3swM9dkqgMEAbgDaLggi,DpLx72BXVhZN6hkA6LKKres3EUKvK36mmh5JaKyaVSYU,7u5D7qPHGZHXQ3nQTeZu5eFKtKGKQWKhJCdM1B3T4Ly4";
 
-const MINTER: &str = "8wUdT2Xvh94Y1zdSoYbNEJXtCXE5BbEswghYXRyrE79e";
+const MINTER: &str = "3fpRvJQx7WP44ijejJrxAYexP71nC6R7xuysnNmpUP9o";
 
 const MAX_MINERS: u8 = 4;
 
@@ -421,7 +421,7 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
 
 // Mint tokens based on provided evidence of mining points
 fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
-    let (slot, priority_fee, kind, automint) = params.into();
+    let (slot, priority_fee, kind, _) = params.into();
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
     let program_id_minter_str = std::env::var("PROGRAM_ID_MINTER").unwrap_or(String::from(MINTER));

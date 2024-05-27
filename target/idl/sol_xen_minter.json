@@ -1,5 +1,5 @@
 {
-  "address": "8wUdT2Xvh94Y1zdSoYbNEJXtCXE5BbEswghYXRyrE79e",
+  "address": "3fpRvJQx7WP44ijejJrxAYexP71nC6R7xuysnNmpUP9o",
   "metadata": {
     "name": "sol_xen_minter",
     "version": "0.1.0-epsilon",
@@ -161,6 +161,35 @@
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "revoke_mint_authority",
+      "discriminator": [
+        140,
+        52,
+        61,
+        238,
+        209,
+        157,
+        189,
+        32
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [

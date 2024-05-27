@@ -4,7 +4,7 @@ use anchor_lang::{
 use sha3::{Digest, Keccak256};
 use ethaddr::Address;
 
-declare_id!("AnvbdsFZQWRRNQtUv8G2v8MtQxdizRT4ZQZbGLYuG1cF");
+declare_id!("7u5D7qPHGZHXQ3nQTeZu5eFKtKGKQWKhJCdM1B3T4Ly4");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -12,6 +12,8 @@ const SUPERHASH_PATTERN: &str = "42069";
 const SUPERHASH_X: u16 = 250;
 const AMP_START: u16 = 300;
 const AMP_CYCLE_SLOTS: u64 = 5_000;
+
+const START_SLOT: u64 = 171737;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -44,6 +46,7 @@ pub mod sol_xen_miner {
 
         // Get the current slot number
         let slot = Clock::get().unwrap().slot;
+        require!(slot > START_SLOT, SolXenError::MintIsNotActive);
 
         print!("Using slot #{}", slot);
 
