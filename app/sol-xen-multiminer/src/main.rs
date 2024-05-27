@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::mem::size_of;
 use std::ops::Sub;
 use solana_client::rpc_client::RpcClient;
-use solana_client::pubsub_client::{PubsubClient, SlotsSubscription};
+use solana_client::pubsub_client::{PubsubClient};
 use solana_sdk::hash::{hash};
 use solana_sdk::{
     system_program,
@@ -26,14 +26,25 @@ use std::time::Duration;
 use solana_sdk::clock::Slot;
 use solana_sdk::signature::Keypair;
 
-const MINERS: &str = "H4Nk2SDQncEv5Cc6GAbradB4WLrHn7pi9VByFL9zYZcA,\
-                      58UESDt7K7GqutuHBYRuskSgX6XoFe8HXjwrAtyeDULM,\
-                      B1Dw79PE8dzpHPKjiQ8HYUBZ995hL1U32bUTRdNVtRbr,\
-                      7ukQWD7UqoC61eATrBMrdfMrJMUuY1wuPTk4m4noZpsH";
+const MINERS: &str = "bqUMbXiee6zhZXPBRgF4zcLg4G58tzW4KF9r4XSRTtD,8GT9DroFTv3YT8tDWrRNH1RQ9pSyLz5rUYTbLgs5ypXL,9L6C4boswfrjS1vPCfMB3L4g73g42sECHAMY5Tf9jsc1,AnvbdsFZQWRRNQtUv8G2v8MtQxdizRT4ZQZbGLYuG1cF";
 
-const MINTER: &str = "8HTvrqZT1JP279DMLT5SfNfGHxUeznem4Bh7zy92sWWx";
+const MINTER: &str = "8wUdT2Xvh94Y1zdSoYbNEJXtCXE5BbEswghYXRyrE79e";
 
 const MAX_MINERS: u8 = 4;
+
+const DECIMALS: u128 = 1_000_000_000;
+
+/*
+    Color::Red => "31".into(),
+    Color::Green => "32".into(),
+    Color::Yellow => "33".into(),
+    Color::Blue => "34".into(),
+ */
+const R: &str = "\x1b[0;31m";
+const G: &str = "\x1b[0;32m";
+const Y: &str = "\x1b[0;33m";
+// const B: &str = "\x1b[0;34m";
+const U: &str = "\x1b[0;39m";
 
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
@@ -92,14 +103,14 @@ pub struct UserEthXnRecord {
     pub superhashes: u32, // 4
 } // 16 == 16
 
-#[derive(BorshSerialize, BorshDeserialize, BorshSchema)]
+#[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
 pub struct UserSolXnRecord {
     pub hashes: u64, // 8
     pub superhashes: u32, // 4
     pub points: u128, // 16
 } // 28
 
-#[derive(BorshSerialize, BorshDeserialize, BorshSchema)]
+#[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
 pub struct UserTokensRecord {
     pub points_counters: [u128; 4], // 4 * 16 = 64
     pub tokens_minted: u128 // 16
@@ -175,11 +186,11 @@ fn main() {
         let keypair_fn = format!("{keypair_path_norm}id{kind}.json");
         let _ = match read_keypair_file(&keypair_fn) {
             Ok(keypair) => {
-                // wallets.insert(kind, keypair.insecure_clone());
+                wallets.insert(kind, keypair.insecure_clone());
                 let a = ethereum_address.clone();
                 let txc = tx_clone.clone();
                 let keypair_clone = keypair.insecure_clone();
-                let h = thread::spawn(move || {
+                let _h = thread::spawn(move || {
                     do_mine(
                         keypair,
                         MineParams {
@@ -197,7 +208,7 @@ fn main() {
                 if automint > 0 {
                     let tx_clone1 = tx.clone();
                     let ws = ws_url.clone();
-                    let h = thread::spawn(move || {
+                    let _hm = thread::spawn(move || {
                         let mut last_slot: Slot = 0;
                         let _ = match PubsubClient::slot_subscribe(ws.as_str()) {
                             Ok(subs) => {
@@ -248,14 +259,40 @@ fn main() {
     }
 }
 
-fn mint(kind: u8, ethereum_address: String, keypair: Keypair, tx: mpsc::Sender<String>) {
-    tx.send(ethereum_address).unwrap();
-    tx.send(keypair.to_base58_string()).unwrap()
+fn get_eth_record(client: &RpcClient, pda: &Pubkey) -> Option<UserEthXnRecord> {
+    let maybe_user_account_data_raw = client.get_account_data(&pda);
+    match maybe_user_account_data_raw {
+        Ok(user_account_data_raw) => {
+            let user_data: [u8; size_of::<UserEthXnRecord>() - 4] = user_account_data_raw.as_slice()[8..20].try_into().unwrap();
+            Some(UserEthXnRecord::try_from_slice(user_data.as_ref()).unwrap())
+        }
+        Err(_) => None
+    }
 }
 
-const R: &str = "\x1b[0;31m";
-const B: &str = "\x1b[0;34m";
-const U: &str = "\x1b[0;39m";
+fn get_sol_record(client: &RpcClient, pda: &Pubkey) -> Option<UserSolXnRecord> {
+    let maybe_user_sol_account_data_raw = client.get_account_data(&pda);
+    match maybe_user_sol_account_data_raw {
+        Ok(user_sol_account_data_raw) => {
+            // 36 32 28
+            // println!("{} {}", user_sol_account_data_raw.len(), size_of::<UserSolXnRecord>());
+            let user_sol_data: [u8; size_of::<UserSolXnRecord>() - 4] = user_sol_account_data_raw.as_slice()[8..].try_into().unwrap();
+            Some(UserSolXnRecord::try_from_slice(user_sol_data.as_ref()).unwrap())
+        }
+        Err(_) => None
+    }
+}
+
+fn get_token_record(client: &RpcClient, pda: &Pubkey) -> Option<UserTokensRecord> {
+    let maybe_user_token_account_data_raw = client.get_account_data(&pda);
+    match maybe_user_token_account_data_raw {
+        Ok(user_balance_data_raw) => {
+            let user_data: [u8; size_of::<UserTokensRecord>()] = user_balance_data_raw.as_slice()[8..].try_into().unwrap();
+            Some(UserTokensRecord::try_from_slice(user_data.as_ref()).unwrap())
+        }
+        Err(_) => None
+    }
+}
 
 // Earn (mine) points by looking for hash patterns in randomized numbers
 fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
@@ -276,12 +313,12 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
 
     let program_id = Pubkey::try_from(miners[kind as usize]).expect("Bad program ID");
 
-    tx.send(format!("{B}[{}]{U} Miner Program ID={}", kind.to_string(), program_id.to_string().green())).unwrap();
+    tx.send(format!("{Y}[{}]{U} Miner Program ID={}", kind.to_string(), program_id.to_string().green())).unwrap();
 
     let client = RpcClient::new(url);
 
     tx.send(format!(
-        "{B}[{}]{U} Using user wallet={}, account={}",
+        "{Y}[{}]{U} Using user wallet={}, account={}",
         kind.to_string(),
         payer.pubkey().to_string().green(),
         ethereum_address.green(),
@@ -361,35 +398,21 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
         let result = client.send_transaction(&transaction);
         match result {
             Ok(signature) => {
-                let maybe_user_account_data_raw = client.get_account_data(&user_eth_xn_record_pda);
-                match maybe_user_account_data_raw {
-                    Ok(user_account_data_raw) => {
-                        let user_data: [u8; size_of::<UserEthXnRecord>() - 4] = user_account_data_raw.as_slice()[8..20].try_into().unwrap();
-                        let user_state = UserEthXnRecord::try_from_slice(user_data.as_ref()).unwrap();
-
-                        let maybe_user_sol_account_data_raw = client.get_account_data(&user_sol_xn_record_pda);
-                        match maybe_user_sol_account_data_raw {
-                            Ok(user_sol_account_data_raw) => {
-                                // 36 32 28
-                                // println!("{} {}", user_sol_account_data_raw.len(), size_of::<UserSolXnRecord>());
-                                let user_sol_data: [u8; size_of::<UserSolXnRecord>() - 4] = user_sol_account_data_raw.as_slice()[8..].try_into().unwrap();
-                                let user_sol_state = UserSolXnRecord::try_from_slice(user_sol_data.as_ref()).unwrap();
-                                tx.send(format!(
-                                    "{B}[{}]{U} Tx={}, hashes={}, superhashes={}, points={}",
-                                    kind.to_string(),
-                                    signature.to_string().yellow(),
-                                    user_state.hashes.to_string().yellow(),
-                                    user_state.superhashes.to_string().yellow(),
-                                    (user_sol_state.points / 1_000_000_000).to_string().yellow(),
-                                )).unwrap();
-                                thread::sleep(Duration::from_secs_f32(delay));
-                            }
-                            Err(_) => tx.send(format!("Account data not yet ready; skipping")).unwrap()
-                        }
-
-                    }
-                    Err(_) => tx.send(format!("Account data not yet ready; skipping")).unwrap()
-                }
+                let user_state = get_eth_record(&client, &user_eth_xn_record_pda);
+                let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
+                let (h, sh) = user_state.map(|s| (s.hashes.to_string(), s.superhashes.to_string()))
+                    .unwrap_or((String::from("-"), String::from("-")));
+                tx.send(format!(
+                    "{Y}[{}]{U} Tx={}, hashes={}, superhashes={}, points={}",
+                    kind.to_string(),
+                    signature.to_string().yellow(),
+                    h.yellow(),
+                    sh.yellow(),
+                    user_sol_state.map(|s| (s.points / DECIMALS).to_string())
+                        .unwrap_or(String::from("-")).yellow(),
+                )).unwrap();
+                thread::sleep(Duration::from_secs_f32(delay));
+                            
             },
             Err(err) => tx.send(format!("Failed: {:?}", err)).unwrap(),
         };
@@ -478,8 +501,11 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
         ]
     };
 
+    // get pre-tx user balance
+    let user_token_state_pre = get_token_record(&client, &user_token_record_pda);
+    
     let compute_budget_instruction_price = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
-
+    
     let transaction = Transaction::new_signed_with_payer(
         &[
             // compute_budget_instruction_limit,
@@ -495,48 +521,32 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
 
     match result {
         Ok(signature) => {
-            let maybe_user_account_data_raw = client.get_account_data(&user_sol_xn_record_pda);
-            match maybe_user_account_data_raw {
-                Ok(user_account_data_raw) => {
-                    // 36 32 28
-                    // println!("{} {}", user_account_data_raw.len(), size_of::<UserSolXnRecord>());
-                    let user_data: [u8; size_of::<UserSolXnRecord>() - 4] = user_account_data_raw.as_slice()[8..36].try_into().unwrap();
-                    let user_state = UserSolXnRecord::try_from_slice(user_data.as_ref()).unwrap();
-                    tx.send(format!(
-                        "{R}[{}]{U} Mint Tx={}, hashes={}, superhashes={}, points={}",
-                        kind.to_string(),
-                        signature.to_string().yellow(),
-                        user_state.hashes.to_string().yellow(),
-                        user_state.superhashes.to_string().yellow(),
-                        user_state.points.to_string().yellow(),
-                    )).unwrap()
-                }
-                Err(_) => tx.send(format!(
-                    "{R}[{}]{U} Account data not yet ready; skipping",
-                    kind.to_string()
-                )).unwrap()
-            }
-            let maybe_user_balance_data_raw = client.get_account_data(&user_token_record_pda);
-            match maybe_user_balance_data_raw {
-                Ok(user_balance_data_raw) => {
-                    // 88 80
-                    // println!("{} {}", user_balance_data_raw.len(), size_of::<UserTokensRecord>());
-                    // console.log(`
-                    // User balance @slot=${Y}${currentSlot}${U}:
-                    // points=${G}${counters}${U},
-                    // tokens=${G}${userTokensRecord.tokensMinted.div(decimals).toNumber()}${U}${deltaStr}.
-                    // Total supply=${G}${totalSupply.value.uiAmount}${U}`)
-                    let user_data: [u8; size_of::<UserTokensRecord>()] = user_balance_data_raw.as_slice()[8..].try_into().unwrap();
-                    let user_state = UserTokensRecord::try_from_slice(user_data.as_ref()).unwrap();
-                    tx.send(format!(
-                        "{R}[{}]{U} Points={:?} Tokens={}",
-                        kind.to_string(),
-                        user_state.points_counters,
-                        user_state.tokens_minted,
-                    )).unwrap()
-                }
-                Err(_) => tx.send(format!("Account data not yet ready; skipping")).unwrap()
-            }
+            // let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
+            let user_token_state = get_token_record(&client, &user_token_record_pda);
+            let user_token_state_1 = user_token_state.clone();
+            let user_token_state_2 = user_token_state.clone();
+            let delta = user_token_state_pre
+                .map(|s_pre| user_token_state
+                    .map(|s| s.tokens_minted - s_pre.tokens_minted)
+                ).unwrap_or(Some(0)).unwrap_or(0);
+            let delta_str: String = if delta > 0 { format!("(+{})", delta / DECIMALS) } else { String::from("") };
+            let points = user_token_state_1
+                .map(|s| s.points_counters
+                    .map(|p| (p / DECIMALS).to_string()).join(",")).unwrap_or(String::from(""));
+
+            // AM #2: balance @slot=150279: points=0,3600,3600,0, tokens=7200(+5400). Total supply=7200
+            tx.send(format!(
+                "{G}[{}]{U} Mint Tx={}, Slot={} Points={} Tokens={}{}",
+                kind.to_string(),
+                signature.to_string().green(),
+                slot.to_string().green(),
+                points.green(),
+                user_token_state_2
+                    .map(|s| (s.tokens_minted / DECIMALS).to_string())
+                    .unwrap_or(String::from("")).green(),
+                delta_str.yellow(),
+            )).unwrap()
+            
         },
         Err(_err) => tx.send(format!(
             "{R}[{}]{U} Unable to confirm Mint tx due to timeout",

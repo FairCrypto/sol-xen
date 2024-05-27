@@ -188,8 +188,7 @@ async function main() {
         }
     }
 
-    const minersStr = process.env.MINERS
-        || '5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw,HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y,FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w,6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW';
+    const minersStr = process.env.MINERS || 'bqUMbXiee6zhZXPBRgF4zcLg4G58tzW4KF9r4XSRTtD,8GT9DroFTv3YT8tDWrRNH1RQ9pSyLz5rUYTbLgs5ypXL,9L6C4boswfrjS1vPCfMB3L4g73g42sECHAMY5Tf9jsc1,AnvbdsFZQWRRNQtUv8G2v8MtQxdizRT4ZQZbGLYuG1cF';
 
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
 
@@ -257,6 +256,7 @@ async function main() {
 
         if (isMainThread) {
             for (const [currentKind] of Object.entries(contexts)) {
+                let autoMinter: Worker | undefined;
                 // launch miner runners
                 const runner = new Worker('./client/runner.ts', {
                     stdout: true,
@@ -276,12 +276,15 @@ async function main() {
                     if (code !== 0)
                         console.error(`Runner stopped with exit code ${code}`);
                     else
-                        console.log('Runner exited')
+                        console.log('Runner completed all runs')
+                    if (autoMinter) {
+                        autoMinter.terminate()
+                    }
                 });
 
                 if (autoMint > 0) {
                     // launch autominters
-                    const autoMinter = new Worker('./client/autominter.ts', {
+                    autoMinter = new Worker('./client/autominter.ts', {
                         stdout: true,
                         stderr: true,
                         workerData: {

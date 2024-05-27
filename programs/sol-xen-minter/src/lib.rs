@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN");
+declare_id!("8wUdT2Xvh94Y1zdSoYbNEJXtCXE5BbEswghYXRyrE79e");
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -60,12 +60,12 @@ pub mod sol_xen_minter {
     }
         
     pub fn mint_tokens(ctx: Context<MintTokens>, kind: u8) -> Result<()> {
-        let miners = vec![
-            solana_program::pubkey::Pubkey::try_from("5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW").unwrap(),
-        ];
+        let comma_delimited = "bqUMbXiee6zhZXPBRgF4zcLg4G58tzW4KF9r4XSRTtD,8GT9DroFTv3YT8tDWrRNH1RQ9pSyLz5rUYTbLgs5ypXL,9L6C4boswfrjS1vPCfMB3L4g73g42sECHAMY5Tf9jsc1,AnvbdsFZQWRRNQtUv8G2v8MtQxdizRT4ZQZbGLYuG1cF";
+
+        let miners: Vec<Pubkey> = comma_delimited
+            .split(',')
+            .map(|s| solana_program::pubkey::Pubkey::try_from(s).unwrap())
+            .collect();
         
         require!(kind < 4, SolXenError::BadParam);
         // require!(ctx.accounts.miner_program.owner == "owner");

@@ -12,9 +12,9 @@ seeds = true
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "http://69.10.34.226:8899"
+# cluster = "http://69.10.34.226:8899"
 # cluster = "devnet"
-# cluster = "localnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

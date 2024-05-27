@@ -11,3 +11,5 @@ test-ledger
 .env
 
 .idea
+
+deploy.sh
