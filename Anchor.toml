@@ -13,8 +13,7 @@ url = "https://api.apr.dev"
 
 [provider]
 # cluster = "http://69.10.34.226:8899"
-# cluster = "https://api.mainnet-beta.solana.com"
-cluster = "https://skilled-lingering-wish.solana-mainnet.quiknode.pro/3e1dae8f5b3c9f83e29742f504e527e696bff22a/"
+cluster = "https://api.mainnet-beta.solana.com"
 # cluster = "devnet"
 # cluster = "localnet"
 wallet = "~/.config/solana/id.json"

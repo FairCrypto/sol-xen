@@ -15,7 +15,7 @@ async function main() {
     const connection = new web3.Connection(network, 'processed');
     const provider = new AnchorProvider(connection, null);
     setProvider(provider);
-    const program = workspace.SolXen;
+    const program = workspace.SolXenMiner;
     let listener;
     const onHashEvent = (event, slot) => {
         const { user, ethAccount, hashes, superhashes, points } = event;

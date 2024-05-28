@@ -11,8 +11,7 @@
 # url="https://api.devnet.solana.com"
 
 # mainnet
-# url="https://api.mainnet-beta.solana.com"
-url="https://skilled-lingering-wish.solana-mainnet.quiknode.pro/3e1dae8f5b3c9f83e29742f504e527e696bff22a/"
+url="https://api.mainnet-beta.solana.com"
 
 # nohup solana-test-validator &
 
@@ -32,7 +31,7 @@ echo "start slot= $start_slot"
 
 timestamp=$(date +%s)
 
-for (( kind=1; kind < $max; kind++ ))
+for (( kind=0; kind < $max; kind++ ))
 do
     echo
     echo
@@ -54,7 +53,7 @@ do
 
     echo
     echo
-    anchor deploy -p sol-xen-miner -- --with-compute-unit-price 1000000
+    anchor deploy -p sol-xen-miner -- --with-compute-unit-price 1000000  --max-sign-attempts 1000
 
     echo
     echo "Sleeping for 5s..."
@@ -108,7 +107,7 @@ anchor build -p sol-xen-minter
 
 echo
 echo
-anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1000000
+anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1000000 ----max-sign-attempts 1000 --use-rpc
 
 echo
 echo "Sleeping for 5s..."

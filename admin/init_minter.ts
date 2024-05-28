@@ -1,4 +1,4 @@
-import {PublicKey, SystemProgram} from '@solana/web3.js';
+import {ComputeBudgetProgram, PublicKey, SystemProgram} from '@solana/web3.js';
 import {AnchorProvider, setProvider, Program, web3, Wallet, workspace, utils} from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
@@ -66,11 +66,17 @@ async function main() {
         decimals: 9,
     }
 
+    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 10000
+    });
+
+
     // Send the mint transaction (as Admin)
 
     const hash = await program.methods.createMint(metadata)
         .accounts(createAccounts)
         .signers([])
+         .preInstructions([addPriorityFee])
         .rpc();
     console.log('Create Mint tx hash', hash)
 

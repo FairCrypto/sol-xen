@@ -85,8 +85,7 @@ async function main() {
     }
     // SETUP SOLANA ENVIRONMENT
 
-    const minersStr = process.env.MINERS
-        || '5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw,HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y,FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w,6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW';
+    const minersStr = process.env.MINERS || 'B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S';
 
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
     const minerProgramId = miners[kind];
