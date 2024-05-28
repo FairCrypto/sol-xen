@@ -11,7 +11,7 @@ use mpl_token_metadata::{types::DataV2};
 
 declare_id!("FmwhDsuBtK3DqFXYnZRfho4Qd2Mty1t4khvNrpPveNao");
 
-const START_SLOT: u64 = 301877078;
+const START_SLOT: u64 = 268475000;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
