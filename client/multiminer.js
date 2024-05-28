@@ -140,7 +140,7 @@ async function main() {
             process.exit(1);
         }
     }
-    const minersStr = process.env.MINERS || 'CFRDmC2xPN7K2D8GadHKpcwSAC5YvPzPjbjYA6v439oi,7vQ9pG7MUjkswNkL96XiiYbz3swM9dkqgMEAbgDaLggi,DpLx72BXVhZN6hkA6LKKres3EUKvK36mmh5JaKyaVSYU,7u5D7qPHGZHXQ3nQTeZu5eFKtKGKQWKhJCdM1B3T4Ly4';
+    const minersStr = process.env.MINERS || 'HzkjK2uP2osHaNm5MrNsMWYWFpsh4WyVBwUD6V6ezbTQ,R9NafUx9yS6HZzG5TSP61DyG6YwFMyniZAwsVPYPorK,27kyMxWVXCiYJ29zff2evkMu6naoDGkt8DSfnwWBMsLL,8GSbYKvNHx9fW7gTGQVTa8MT2euRnpniiwDC7XDPSA78';
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
     // SETUP SOLANA ENVIRONMENT
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';

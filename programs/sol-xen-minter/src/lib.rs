@@ -9,9 +9,9 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("3fpRvJQx7WP44ijejJrxAYexP71nC6R7xuysnNmpUP9o");
+declare_id!("FmwhDsuBtK3DqFXYnZRfho4Qd2Mty1t4khvNrpPveNao");
 
-const START_SLOT: u64 = 171737;
+const START_SLOT: u64 = 301877078;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -20,9 +20,8 @@ const START_SLOT: u64 = 171737;
 pub mod sol_xen_minter {
     use super::*;
 
-    pub fn create_mint(_ctx: Context<InitTokenMint>, _metadata: InitTokenParams) -> Result<()> {
-
-        /*
+    pub fn create_mint(ctx: Context<InitTokenMint>, metadata: InitTokenParams) -> Result<()> {
+        
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
         let signer = [&seeds[..]];
 
@@ -57,7 +56,7 @@ pub mod sol_xen_minter {
             true,
             None,
         )?;
-        */
+        
         Ok(())
     }
 
@@ -96,7 +95,7 @@ pub mod sol_xen_minter {
         
         require!(kind < 4, SolXenError::BadParam);
 
-        let comma_delimited = "CFRDmC2xPN7K2D8GadHKpcwSAC5YvPzPjbjYA6v439oi,7vQ9pG7MUjkswNkL96XiiYbz3swM9dkqgMEAbgDaLggi,DpLx72BXVhZN6hkA6LKKres3EUKvK36mmh5JaKyaVSYU,7u5D7qPHGZHXQ3nQTeZu5eFKtKGKQWKhJCdM1B3T4Ly4";
+        let comma_delimited = "HzkjK2uP2osHaNm5MrNsMWYWFpsh4WyVBwUD6V6ezbTQ,R9NafUx9yS6HZzG5TSP61DyG6YwFMyniZAwsVPYPorK,27kyMxWVXCiYJ29zff2evkMu6naoDGkt8DSfnwWBMsLL,8GSbYKvNHx9fW7gTGQVTa8MT2euRnpniiwDC7XDPSA78";
 
         let miners: Vec<Pubkey> = comma_delimited
             .split(',')
@@ -175,10 +174,10 @@ pub struct InitTokenMint<'info> {
     )]
     pub mint_account: Box<Account<'info, Mint>>,
     /// CHECK: Address validated using constraint
-    // #[account(mut)]
-    // pub metadata: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub metadata: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
-    // pub token_metadata_program: Program<'info, Metadata>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }

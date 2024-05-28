@@ -32,12 +32,12 @@ async function main() {
     ], TOKEN_METADATA_PROGRAM_ID);
     const createAccounts = {
         admin: provider.wallet.publicKey,
-        // metadata: metadataAddress,
+        metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
     };
     const metadata = {
-        name: "solXEN (epsilon)",
-        symbol: "solXENe2",
+        name: "solXEN (eta)",
+        symbol: "solXENeta",
         uri: "",
         decimals: 9,
     };

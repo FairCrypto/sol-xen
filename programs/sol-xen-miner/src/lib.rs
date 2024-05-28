@@ -4,7 +4,7 @@ use anchor_lang::{
 use sha3::{Digest, Keccak256};
 use ethaddr::Address;
 
-declare_id!("7u5D7qPHGZHXQ3nQTeZu5eFKtKGKQWKhJCdM1B3T4Ly4");
+declare_id!("8GSbYKvNHx9fW7gTGQVTa8MT2euRnpniiwDC7XDPSA78");
 
 const MAX_HASHES: u8 = 72;
 const HASH_PATTERN: &str = "420";
@@ -13,7 +13,7 @@ const SUPERHASH_X: u16 = 250;
 const AMP_START: u16 = 300;
 const AMP_CYCLE_SLOTS: u64 = 5_000;
 
-const START_SLOT: u64 = 171737;
+const START_SLOT: u64 = 301877078;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";

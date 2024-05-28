@@ -2,11 +2,18 @@
 
 # Solana mainnet
 # slot # 268,321,180 @	May 27, 2024 21:40:11 UTC
-# target slot # 268_495_152 @	May 28, 2024 10:00:00 PDT
+# target slot # 268495152 @	May 28, 2024 10:00:00 PDT
 
-url="http://127.0.0.1:8899"
+# localnet
+# url="http://127.0.0.1:8899"
 
-nohup solana-test-validator &
+# devnet
+url="https://api.devnet.solana.com"
+
+# mainnet
+url="https://api.solana.com"
+
+# nohup solana-test-validator &
 
 solana config set --url "$url"
 
@@ -17,8 +24,10 @@ miners=''
 
 current_slot=$(solana slot |   awk  '{print $0}')
 echo "current slot= $current_slot"
-start_slot=$((current_slot+320))
-echo "new slot= $start_slot"
+
+# start_slot=$((current_slot+330))
+start_slot=268495152
+echo "start slot= $start_slot"
 
 timestamp=$(date +%s)
 
@@ -141,15 +150,15 @@ sed -i 's/const MINERS: \&str = "\(.*\)";/const MINERS: \&str = "'$miners'";/' .
 sed -i 's/const MINERS: \&str = "\(.*\)";/const MINERS: \&str = "'$miners'";/' ./app/sol-xen-multiminer/src/main.rs
 sed -i 's/const MINTER: \&str = "\(.*\)";/const MINTER: \&str = "'$minter_key'";/' ./app/sol-xen-multiminer/src/main.rs
 
-echo
-echo "Doing test mines and mints"
+# echo
+# echo "Doing test mines and mints"
 # echo "Running TSX multiminer"
 # echo
 # tsx ./client/multiminer.ts mine --address 0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964 -r 10 -f 1 -d 1 -a 10
 
 echo
-echo "Pausing for 5s"
-sleep 5
+# echo "Pausing for 5s"
+# sleep 5
 echo "Compiling and Running NodeJS multiminer"
 
 tsc 1>/dev/null
@@ -159,13 +168,13 @@ sed -i "s/runner.ts/runner.js/" ./client/multiminer.js
 sed -i "s/autominter.ts/autominter.js/" ./client/multiminer.js
 sed -i "s/multiminer/multiminer.js/" ./client/runner.js
 
-node ./client/multiminer.js mine --address 0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964 -r 10 -f 1 -d 1 -a 10
+# node ./client/multiminer.js mine --address 0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964 -r 10 -f 1 -d 1 -a 10
 
-echo
-echo "Pausing for 5s"
-sleep 5
-echo "Running Rust multiminer"
-cargo run --package sol-xen-multiminer -- --address 0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964 -r 10 -f 1 -d 1 -a 10
+# echo
+# echo "Pausing for 5s"
+# sleep 5
+# echo "Running Rust multiminer"
+# cargo run --package sol-xen-multiminer -- --address 0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964 -r 10 -f 1 -d 1 -a 10
 
 
 
