@@ -62,7 +62,7 @@ async function main() {
     const metadata = {
         name: "solXEN",
         symbol: "solXEN",
-        uri: "",
+        uri: "https://raw.githubusercontent.com/FairCrypto/sol-xen/master/images/solXEN.png",
         decimals: 9,
     }
 
