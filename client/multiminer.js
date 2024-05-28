@@ -140,8 +140,7 @@ async function main() {
             process.exit(1);
         }
     }
-    const minersStr = process.env.MINERS
-        || '5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw,HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y,FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w,6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW';
+    const minersStr = process.env.MINERS || 'HzkjK2uP2osHaNm5MrNsMWYWFpsh4WyVBwUD6V6ezbTQ,R9NafUx9yS6HZzG5TSP61DyG6YwFMyniZAwsVPYPorK,27kyMxWVXCiYJ29zff2evkMu6naoDGkt8DSfnwWBMsLL,8GSbYKvNHx9fW7gTGQVTa8MT2euRnpniiwDC7XDPSA78';
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
     // SETUP SOLANA ENVIRONMENT
     const network = process.env.ANCHOR_PROVIDER_URL || 'localnet';
@@ -201,6 +200,7 @@ async function main() {
         const associateTokenProgram = new web3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
         if (isMainThread) {
             for (const [currentKind] of Object.entries(contexts)) {
+                let autoMinter;
                 // launch miner runners
                 const runner = new Worker('./client/runner.js', {
                     stdout: true,
@@ -220,11 +220,14 @@ async function main() {
                     if (code !== 0)
                         console.error(`Runner stopped with exit code ${code}`);
                     else
-                        console.log('Runner exited');
+                        console.log('Runner completed all runs');
+                    if (autoMinter) {
+                        autoMinter.terminate();
+                    }
                 });
                 if (autoMint > 0) {
                     // launch autominters
-                    const autoMinter = new Worker('./client/autominter.js', {
+                    autoMinter = new Worker('./client/autominter.js', {
                         stdout: true,
                         stderr: true,
                         workerData: {

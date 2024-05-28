@@ -2,14 +2,16 @@ use anchor_lang::{
     prelude::*,
 };
 use anchor_spl::{
-    token::{Token, Mint, MintTo, TokenAccount},
+    token::{Token, Mint, MintTo, TokenAccount, SetAuthority},
     metadata::{create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, mpl_token_metadata},
-    token::{mint_to},
+    token::{mint_to, set_authority},
     associated_token::AssociatedToken,
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN");
+declare_id!("FmwhDsuBtK3DqFXYnZRfho4Qd2Mty1t4khvNrpPveNao");
+
+const START_SLOT: u64 = 268479759;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -18,9 +20,8 @@ declare_id!("7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN");
 pub mod sol_xen_minter {
     use super::*;
 
-    pub fn create_mint(_ctx: Context<InitTokenMint>, _metadata: InitTokenParams) -> Result<()> {
-
-        /*
+    pub fn create_mint(ctx: Context<InitTokenMint>, metadata: InitTokenParams) -> Result<()> {
+        
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
         let signer = [&seeds[..]];
 
@@ -55,17 +56,51 @@ pub mod sol_xen_minter {
             true,
             None,
         )?;
-        */
+        
         Ok(())
     }
+
+    pub fn revoke_mint_authority(ctx: Context<RevokeMintAuthority>, ) -> Result<()> {
+        set_authority(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                SetAuthority {
+                    account_or_mint:ctx.accounts.mint_account.to_account_info(),
+                    current_authority:ctx.accounts.admin.to_account_info(),
+                },
+            ),
+            anchor_spl::token::spl_token::instruction::AuthorityType::FreezeAccount,
+            None
+        ).expect("Error relinquishing Mint FreezeAccount");
         
+        set_authority(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                SetAuthority {
+                    account_or_mint:ctx.accounts.mint_account.to_account_info(),
+                    current_authority:ctx.accounts.admin.to_account_info(),
+                },
+            ),
+            anchor_spl::token::spl_token::instruction::AuthorityType::CloseAccount,
+            None
+        ).expect("Error relinquishing Mint CloseAccount");
+        
+        Ok(())
+    }
+
     pub fn mint_tokens(ctx: Context<MintTokens>, kind: u8) -> Result<()> {
-        let miners = vec![
-            solana_program::pubkey::Pubkey::try_from("5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("HbUSxXr4FKPShRyk813rHcXYnLkTwWEnhABe9gHJbe9Y").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("FMjsA783PDyU7856mT1v44vh5FgrL2VAFR241NF5Zd1w").unwrap(),
-            solana_program::pubkey::Pubkey::try_from("6uxwCexinySFNP6fox9Zf48yhPTfAGYBw4j8QWQrCzmW").unwrap(),
-        ];
+        // Get the current slot number
+        let slot = Clock::get().unwrap().slot;
+        require!(slot > START_SLOT, SolXenError::MintIsNotActive);
+        
+        require!(kind < 4, SolXenError::BadParam);
+
+        let comma_delimited = "HzkjK2uP2osHaNm5MrNsMWYWFpsh4WyVBwUD6V6ezbTQ,R9NafUx9yS6HZzG5TSP61DyG6YwFMyniZAwsVPYPorK,27kyMxWVXCiYJ29zff2evkMu6naoDGkt8DSfnwWBMsLL,8GSbYKvNHx9fW7gTGQVTa8MT2euRnpniiwDC7XDPSA78";
+
+        let miners: Vec<Pubkey> = comma_delimited
+            .split(',')
+            .map(|s| solana_program::pubkey::Pubkey::try_from(s).unwrap())
+            .collect();
         
         require!(kind < 4, SolXenError::BadParam);
         // require!(ctx.accounts.miner_program.owner == "owner");
@@ -139,12 +174,21 @@ pub struct InitTokenMint<'info> {
     )]
     pub mint_account: Box<Account<'info, Mint>>,
     /// CHECK: Address validated using constraint
-    // #[account(mut)]
-    // pub metadata: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub metadata: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
-    // pub token_metadata_program: Program<'info, Metadata>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct RevokeMintAuthority<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    #[account(mut)]
+    pub mint_account: Box<Account<'info, Mint>>,
+    pub token_program: Program<'info, Token>
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]

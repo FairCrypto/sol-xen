@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import {SolXen} from '../target/types/sol_xen';
+import {SolXenMiner} from '../target/types/sol_xen_miner';
 import {AnchorProvider, setProvider, Program, web3, workspace} from '@coral-xyz/anchor';
 //import { debug } from 'debug';
 import pkg from 'debug';
@@ -23,7 +23,7 @@ async function main() {
         null as any,
     )
     setProvider(provider);
-    const program = workspace.SolXen as Program<SolXen>;
+    const program = workspace.SolXenMiner as Program<SolXenMiner>;
 
     let listener: number;
 

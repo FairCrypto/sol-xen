@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/sol_xen_minter.json`.
  */
 export type SolXenMinter = {
-  "address": "7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN",
+  "address": "FmwhDsuBtK3DqFXYnZRfho4Qd2Mty1t4khvNrpPveNao",
   "metadata": {
     "name": "solXenMinter",
     "version": "0.1.0-epsilon",
@@ -49,8 +49,16 @@ export type SolXenMinter = {
           }
         },
         {
+          "name": "metadata",
+          "writable": true
+        },
+        {
           "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
         {
           "name": "systemProgram",
@@ -167,6 +175,35 @@ export type SolXenMinter = {
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "revokeMintAuthority",
+      "discriminator": [
+        140,
+        52,
+        61,
+        238,
+        209,
+        157,
+        189,
+        32
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mintAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [

@@ -1,5 +1,5 @@
 {
-  "address": "7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN",
+  "address": "FmwhDsuBtK3DqFXYnZRfho4Qd2Mty1t4khvNrpPveNao",
   "metadata": {
     "name": "sol_xen_minter",
     "version": "0.1.0-epsilon",
@@ -43,8 +43,16 @@
           }
         },
         {
+          "name": "metadata",
+          "writable": true
+        },
+        {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
         {
           "name": "system_program",
@@ -57,7 +65,7 @@
       ],
       "args": [
         {
-          "name": "_metadata",
+          "name": "metadata",
           "type": {
             "defined": {
               "name": "InitTokenParams"
@@ -161,6 +169,35 @@
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "revoke_mint_authority",
+      "discriminator": [
+        140,
+        52,
+        61,
+        238,
+        209,
+        157,
+        189,
+        32
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [

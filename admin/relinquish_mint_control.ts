@@ -36,43 +36,24 @@ async function main() {
     const program = workspace.SolXenMinter as Program<SolXenMinter>;
     console.log('Program ID:', program.programId.toBase58());
 
-    const METADATA_SEED = "metadata";
-    const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-
     const [mint] = web3.PublicKey.findProgramAddressSync(
         [Buffer.from("mint")],
         program.programId
     );
 
-    const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
-        [
-            Buffer.from(METADATA_SEED),
-            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-            mint.toBuffer(),
-        ],
-        TOKEN_METADATA_PROGRAM_ID
-    );
-
-    const createAccounts = {
+    const relinquishControlAccounts = {
         admin: provider.wallet.publicKey,
-        metadata: metadataAddress,
         tokenProgram: TOKEN_PROGRAM_ID,
+        mintAccount: mint
     };
-
-    const metadata = {
-        name: "solXEN",
-        symbol: "solXEN",
-        uri: "",
-        decimals: 9,
-    }
 
     // Send the mint transaction (as Admin)
 
-    const hash = await program.methods.createMint(metadata)
-        .accounts(createAccounts)
+    const hash = await program.methods.revokeMintAuthority()
+        .accounts(relinquishControlAccounts)
         .signers([])
         .rpc();
-    console.log('Create Mint tx hash', hash)
+    console.log('Relinquish Mint tx hash', hash)
 
     const mintAccount = await getMint(provider.connection, mint);
     console.log(mintAccount.address.toBase58())
