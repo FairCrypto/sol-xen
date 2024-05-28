@@ -8,10 +8,10 @@
 # url="http://127.0.0.1:8899"
 
 # devnet
-url="https://api.devnet.solana.com"
+# url="https://api.devnet.solana.com"
 
 # mainnet
-url="https://api.solana.com"
+url="https://api.mainnet-beta.solana.com"
 
 # nohup solana-test-validator &
 
@@ -26,7 +26,7 @@ current_slot=$(solana slot |   awk  '{print $0}')
 echo "current slot= $current_slot"
 
 # start_slot=$((current_slot+330))
-start_slot=268495152
+start_slot=268475000
 echo "start slot= $start_slot"
 
 timestamp=$(date +%s)

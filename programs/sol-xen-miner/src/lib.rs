@@ -11,7 +11,7 @@ const HASH_PATTERN: &str = "420";
 const SUPERHASH_PATTERN: &str = "42069";
 const SUPERHASH_X: u16 = 250;
 const AMP_START: u16 = 300;
-const AMP_CYCLE_SLOTS: u64 = 5_000;
+const AMP_CYCLE_SLOTS: u64 = 100_000;
 
 const START_SLOT: u64 = 301877078;
 
