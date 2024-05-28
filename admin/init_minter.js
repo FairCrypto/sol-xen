@@ -1,3 +1,4 @@
+import { ComputeBudgetProgram } from '@solana/web3.js';
 import { AnchorProvider, setProvider, web3, Wallet, workspace } from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
@@ -36,15 +37,19 @@ async function main() {
         tokenProgram: TOKEN_PROGRAM_ID,
     };
     const metadata = {
-        name: "solXEN (eta)",
-        symbol: "solXENeta",
-        uri: "",
+        name: "solXEN",
+        symbol: "solXEN",
+        uri: "https://raw.githubusercontent.com/FairCrypto/sol-xen/master/images/solXEN.png",
         decimals: 9,
     };
+    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 10000
+    });
     // Send the mint transaction (as Admin)
     const hash = await program.methods.createMint(metadata)
         .accounts(createAccounts)
         .signers([])
+        .preInstructions([addPriorityFee])
         .rpc();
     console.log('Create Mint tx hash', hash);
     const mintAccount = await getMint(provider.connection, mint);

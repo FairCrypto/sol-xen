@@ -26,7 +26,7 @@ current_slot=$(solana slot |   awk  '{print $0}')
 echo "current slot= $current_slot"
 
 # start_slot=$((current_slot+330))
-start_slot=268479759
+start_slot=268484759
 echo "start slot= $start_slot"
 
 timestamp=$(date +%s)
@@ -45,15 +45,15 @@ do
     key=$(anchor keys list | grep "sol_xen_miner" | awk -F': ' '{print $2}')
 
     echo "   key= $key"
-    sed -i 's/declare_id!("\(.*\)");/declare_id!("'$key'");/' ./programs/sol-xen-miner/src/lib.rs
+    gsed -i 's/declare_id!("\(.*\)");/declare_id!("'$key'");/' ./programs/sol-xen-miner/src/lib.rs
     # const START_SLOT: u64 = 301_816_336;
-    sed -i 's/const START_SLOT: u64 = \(.*\);/const START_SLOT: u64 = '$start_slot';/' ./programs/sol-xen-miner/src/lib.rs
+    gsed -i 's/const START_SLOT: u64 = \(.*\);/const START_SLOT: u64 = '$start_slot';/' ./programs/sol-xen-miner/src/lib.rs
 
     anchor build -p sol-xen-miner
 
     echo
     echo
-    anchor deploy -p sol-xen-miner
+    anchor deploy -p sol-xen-miner -- --with-compute-unit-price 1000000  --max-sign-attempts 1000
 
     echo
     echo "Sleeping for 5s..."
@@ -77,8 +77,8 @@ do
     fi
 
     # "address": "5i4ZPZujwASXGSYENhQEEijiU4EWBzobPAKzKUs87khw",
-    sed -i 's/"address": "\(.*\)",/"address": "'$key'",/' "./target/idl/sol_xen_miner_$kind.json"
-    sed -i 's/"address": "\(.*\)",/"address": "'$key'",/' "./target/types/sol_xen_miner_$kind.ts"
+    gsed -i 's/"address": "\(.*\)",/"address": "'$key'",/' "./target/idl/sol_xen_miner_$kind.json"
+    gsed -i 's/"address": "\(.*\)",/"address": "'$key'",/' "./target/types/sol_xen_miner_$kind.ts"
 
     echo
 done
@@ -91,7 +91,7 @@ echo
 echo "##### Minter #####"
 echo
 
-sed -i 's/comma_delimited = "\(.*\)";/comma_delimited = "'$miners'";/' ./programs/sol-xen-minter/src/lib.rs
+gsed -i 's/comma_delimited = "\(.*\)";/comma_delimited = "'$miners'";/' ./programs/sol-xen-minter/src/lib.rs
 
 rm ./target/deploy/sol_xen_minter.so
 rm ./target/deploy/sol_xen_minter-keypair.json
@@ -100,14 +100,14 @@ anchor build -p sol-xen-miner
 minter_key=$(anchor keys list | grep "sol_xen_minter" | awk -F': ' '{print $2}')
 
 echo "   minter key= $minter_key"
-sed -i 's/declare_id!("\(.*\)");/declare_id!("'$minter_key'");/' ./programs/sol-xen-minter/src/lib.rs
-sed -i 's/const START_SLOT: u64 = \(.*\);/const START_SLOT: u64 = '$start_slot';/' ./programs/sol-xen-minter/src/lib.rs
+gsed -i 's/declare_id!("\(.*\)");/declare_id!("'$minter_key'");/' ./programs/sol-xen-minter/src/lib.rs
+gsed -i 's/const START_SLOT: u64 = \(.*\);/const START_SLOT: u64 = '$start_slot';/' ./programs/sol-xen-minter/src/lib.rs
 
 anchor build -p sol-xen-minter
 
 echo
 echo
-anchor deploy -p sol-xen-minter
+anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1000000 ----max-sign-attempts 1000 --use-rpc
 
 echo
 echo "Sleeping for 5s..."
@@ -143,12 +143,12 @@ echo
 echo "Modifying clients"
 echo
 # || '....';
-sed -i "s/process.env.MINERS || '\(.*\)';/process.env.MINERS || '"$miners"';/" ./client/multiminer.ts
+gsed -i "s/process.env.MINERS || '\(.*\)';/process.env.MINERS || '"$miners"';/" ./client/multiminer.ts
 
 # const MINERS: &str = "
-sed -i 's/const MINERS: \&str = "\(.*\)";/const MINERS: \&str = "'$miners'";/' ./app/sol-xen-client/src/main.rs
-sed -i 's/const MINERS: \&str = "\(.*\)";/const MINERS: \&str = "'$miners'";/' ./app/sol-xen-multiminer/src/main.rs
-sed -i 's/const MINTER: \&str = "\(.*\)";/const MINTER: \&str = "'$minter_key'";/' ./app/sol-xen-multiminer/src/main.rs
+gsed -i 's/const MINERS: \&str = "\(.*\)";/const MINERS: \&str = "'$miners'";/' ./app/sol-xen-client/src/main.rs
+gsed -i 's/const MINERS: \&str = "\(.*\)";/const MINERS: \&str = "'$miners'";/' ./app/sol-xen-multiminer/src/main.rs
+gsed -i 's/const MINTER: \&str = "\(.*\)";/const MINTER: \&str = "'$minter_key'";/' ./app/sol-xen-multiminer/src/main.rs
 
 # echo
 # echo "Doing test mines and mints"
@@ -164,9 +164,9 @@ echo "Compiling and Running NodeJS multiminer"
 tsc 1>/dev/null
 
 # runner.ts
-sed -i "s/runner.ts/runner.js/" ./client/multiminer.js
-sed -i "s/autominter.ts/autominter.js/" ./client/multiminer.js
-sed -i "s/multiminer/multiminer.js/" ./client/runner.js
+gsed -i "s/runner.ts/runner.js/" ./client/multiminer.js
+gsed -i "s/autominter.ts/autominter.js/" ./client/multiminer.js
+gsed -i "s/multiminer/multiminer.js/" ./client/runner.js
 
 # node ./client/multiminer.js mine --address 0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964 -r 10 -f 1 -d 1 -a 10
 

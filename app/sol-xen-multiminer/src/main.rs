@@ -26,9 +26,9 @@ use std::time::Duration;
 use solana_sdk::clock::Slot;
 use solana_sdk::signature::Keypair;
 
-const MINERS: &str = "HzkjK2uP2osHaNm5MrNsMWYWFpsh4WyVBwUD6V6ezbTQ,R9NafUx9yS6HZzG5TSP61DyG6YwFMyniZAwsVPYPorK,27kyMxWVXCiYJ29zff2evkMu6naoDGkt8DSfnwWBMsLL,8GSbYKvNHx9fW7gTGQVTa8MT2euRnpniiwDC7XDPSA78";
+const MINERS: &str = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
 
-const MINTER: &str = "FmwhDsuBtK3DqFXYnZRfho4Qd2Mty1t4khvNrpPveNao";
+const MINTER: &str = "7A5q3Cw4oN5w1UXfsRTJbxGDXmVhXL2PLhL1Hp7gGCmj";
 
 const MAX_MINERS: u8 = 4;
 
