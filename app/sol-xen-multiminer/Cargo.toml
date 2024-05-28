@@ -5,7 +5,7 @@ description = "solXEN Rust Multiminer"
 edition = "2021"
 
 [[bin]]
-name = "sol_xen_multiminer"
+name = "sol-xen-multiminer"
 path = "src/main.rs"
 
 [dependencies]
