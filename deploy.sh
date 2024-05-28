@@ -26,7 +26,7 @@ current_slot=$(solana slot |   awk  '{print $0}')
 echo "current slot= $current_slot"
 
 # start_slot=$((current_slot+330))
-start_slot=268475000
+start_slot=268479759
 echo "start slot= $start_slot"
 
 timestamp=$(date +%s)

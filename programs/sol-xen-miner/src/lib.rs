@@ -13,7 +13,7 @@ const SUPERHASH_X: u16 = 250;
 const AMP_START: u16 = 300;
 const AMP_CYCLE_SLOTS: u64 = 100_000;
 
-const START_SLOT: u64 = 268475000;
+const START_SLOT: u64 = 268479759;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
