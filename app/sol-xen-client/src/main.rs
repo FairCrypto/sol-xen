@@ -24,6 +24,8 @@ use std::time::Duration;
 
 const MINERS: &str = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
 
+const MINTER: &str = "5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m";
+
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
     pub address: [u8; 20],
@@ -125,7 +127,7 @@ fn do_mine(ethereum_address: String, address: [u8; 20], priority_fee: u64, runs:
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
-    let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
+    let miners_program_ids_str= String::from(MINERS);
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), 4, "Bad miners set");
 
@@ -270,10 +272,10 @@ fn do_mint(priority_fee: u64, kind: u8) {
     let keypair_path = std::env::var("USER_WALLET").expect("USER_WALLET must be set.");
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
 
-    let program_id_minter_str = std::env::var("PROGRAM_ID_MINTER").expect("PROGRAM_ID must be set.");
+    let program_id_minter_str = String::from(MINTER);
     let program_id_minter = Pubkey::try_from(program_id_minter_str.as_str()).expect("Bad program ID");
 
-    let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
+    let miners_program_ids_str= String::from(MINERS);
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), 4, "Bad miners set");
 
