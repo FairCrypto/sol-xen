@@ -9,9 +9,9 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("7A5q3Cw4oN5w1UXfsRTJbxGDXmVhXL2PLhL1Hp7gGCmj");
+declare_id!("5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m");
 
-const START_SLOT: u64 = 268484759;
+const START_SLOT: u64 = 1;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -170,7 +170,7 @@ pub struct InitTokenMint<'info> {
         payer = admin,
         mint::decimals = params.decimals,
         mint::authority = mint_account.key(),
-        mint::freeze_authority = mint_account.key(),
+        // mint::freeze_authority = admin.key(),
     )]
     pub mint_account: Box<Account<'info, Mint>>,
     /// CHECK: Address validated using constraint
