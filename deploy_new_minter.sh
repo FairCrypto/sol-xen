@@ -60,7 +60,7 @@ anchor build -p sol-xen-minter
 
 echo
 echo
-anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1 ----max-sign-attempts 3 --use-rpc
+anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1000000 ----max-sign-attempts 1000 --use-rpc
 # anchor deploy -p sol-xen-minter
 
 echo
