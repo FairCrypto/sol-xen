@@ -9,9 +9,9 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("7A5q3Cw4oN5w1UXfsRTJbxGDXmVhXL2PLhL1Hp7gGCmj");
+declare_id!("AeDKCiHmLjZTQhjiZyDePYheE9vhz64NwABySQ377p16");
 
-const START_SLOT: u64 = 268484759;
+const START_SLOT: u64 = 1;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -95,7 +95,7 @@ pub mod sol_xen_minter {
         
         require!(kind < 4, SolXenError::BadParam);
 
-        let comma_delimited = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
+        let comma_delimited = "59UDLDePjEG6eK3L3so8vuo5ireEE7HxyZcEcK3WjFPb,9Eb6SpZZV7X4urHMCGu4FHKbAxu1Wn4Km5C5KJGZC4ja,79UJS6LgutPGkjLw64fjHjNNpDBujBqg2ZQy8gb8PV3D,ABgvHmWukyoAQ8Gc89cGrqH425BqKsXxeeTcZm6Uu6Q3";
 
         let miners: Vec<Pubkey> = comma_delimited
             .split(',')
@@ -170,7 +170,7 @@ pub struct InitTokenMint<'info> {
         payer = admin,
         mint::decimals = params.decimals,
         mint::authority = mint_account.key(),
-        mint::freeze_authority = mint_account.key(),
+        // mint::freeze_authority = admin.key(),
     )]
     pub mint_account: Box<Account<'info, Mint>>,
     /// CHECK: Address validated using constraint
