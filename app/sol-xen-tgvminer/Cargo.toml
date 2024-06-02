@@ -1,11 +1,11 @@
 [package]
-name = "sol-xen-multiminer"
+name = "sol-xen-tgvminer"
 version = "0.1.0"
-description = "solXEN Rust Multiminer"
+description = "solXEN Rust TGVMiner"
 edition = "2021"
 
 [[bin]]
-name = "sol-xen-multiminer"
+name = "sol-xen-tgvminer"
 path = "src/main.rs"
 
 [dependencies]
@@ -19,5 +19,7 @@ solana-client = "1.18.12"
 solana-sdk = "1.18.12"
 spl-associated-token-account = "3.0.2"
 spl-token = "4.0.0"
+solana-rpc-client = "1.18.12"
 tokio = { version = "1.37.0", features = ["macros", "rt", "rt-multi-thread"] }
 jsonrpsee = { version = "0.22.5", features = ["http-client", "macros"] }
+

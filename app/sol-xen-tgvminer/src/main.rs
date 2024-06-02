@@ -4,20 +4,42 @@ use std::ops::Sub;
 use solana_client::rpc_client::RpcClient;
 use solana_client::pubsub_client::{PubsubClient};
 use solana_sdk::hash::{hash};
-use solana_sdk::{system_program, pubkey::Pubkey, signature::{Signer, read_keypair_file}, transaction::Transaction, instruction::{Instruction, AccountMeta}, compute_budget::ComputeBudgetInstruction, system_instruction};
+use solana_sdk::{
+    system_program,
+    pubkey::Pubkey,
+    signature::{Signer, read_keypair_file},
+    transaction::Transaction,
+    instruction::{Instruction, AccountMeta},
+    compute_budget::ComputeBudgetInstruction,
+};
 use spl_token;
 use spl_associated_token_account::get_associated_token_address_with_program_id;
 use clap::{Parser};
-use std::process;
-use std::sync::mpsc;
+use std::{process};
+use std::sync::{Arc, mpsc};
 use borsh::{BorshSerialize, BorshDeserialize, to_vec, BorshSchema};
 use ethaddr::Address;
 use colored::*;
 use dotenv::dotenv;
 use std::thread;
-use std::time::Duration;
 use solana_sdk::clock::Slot;
 use solana_sdk::signature::Keypair;
+use {
+    solana_client::{
+        connection_cache::ConnectionCache,
+        nonblocking::tpu_client::TpuClient,
+        send_and_confirm_transactions_in_parallel::{
+            send_and_confirm_transactions_in_parallel,
+            SendAndConfirmConfig,
+        },
+        tpu_client::TpuClientConfig,
+    },
+    solana_rpc_client::nonblocking::rpc_client::RpcClient as NonblockingRpcClient,
+    solana_sdk::{
+        message::Message,
+    },
+};
+
 use jsonrpsee::core::client::{ClientT};
 use jsonrpsee::rpc_params;
 use jsonrpsee::http_client::{HttpClient, HttpClientBuilder};
@@ -45,7 +67,7 @@ const U: &str = "\x1b[0;39m";
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
     pub address: [u8; 20],
-    pub address_str: String
+    pub address_str: String,
 }
 
 #[derive(BorshSerialize, Debug)]
@@ -87,31 +109,35 @@ pub struct GlobalXnRecord {
     pub kind: u8,
     pub hashes: u64,
     pub superhashes: u32,
-    pub points: u128
+    pub points: u128,
 } // 38 <> 48
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
 pub struct BoxedGlobalXnRecord {
-    pub data: Box<GlobalXnRecord>
+    pub data: Box<GlobalXnRecord>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema)]
 pub struct UserEthXnRecord {
-    pub hashes: u64,  // 8
+    pub hashes: u64,
+    // 8
     pub superhashes: u32, // 4
 } // 16 == 16
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
 pub struct UserSolXnRecord {
-    pub hashes: u64, // 8
-    pub superhashes: u32, // 4
+    pub hashes: u64,
+    // 8
+    pub superhashes: u32,
+    // 4
     pub points: u128, // 16
 } // 28
 
 #[derive(BorshSerialize, BorshDeserialize, BorshSchema, Clone)]
 pub struct UserTokensRecord {
-    pub points_counters: [u128; 4], // 4 * 16 = 64
-    pub tokens_minted: u128 // 16
+    pub points_counters: [u128; 4],
+    // 4 * 16 = 64
+    pub tokens_minted: u128, // 16
 } // 80
 
 pub struct MineParams {
@@ -186,8 +212,8 @@ async fn main() {
 
     let url = std::env::var("ANCHOR_PROVIDER_URL")
         .expect("ANCHOR_PROVIDER_URL must be set.");
-    let ws_url_ =  str::replace(url.as_str(), "http", "ws");
-    let ws_url =  str::replace(ws_url_.as_str(), "8899", "8900");
+    let ws_url_ = str::replace(url.as_str(), "http", "ws");
+    let ws_url = str::replace(ws_url_.as_str(), "8899", "8900");
     let jito_url = if jito_tip.is_some() {
         std::env::var("JITO_PROVIDER_URL").map(|u| Some(u))
             .expect("JITO_PROVIDER_URL must be set with 'jito_tip' param.")
@@ -202,22 +228,27 @@ async fn main() {
         vec!()
     };
     println!("{:?}", tippers);
-    
+
     let (tx, rx) = mpsc::channel::<String>();
     let mut wallets: HashMap<u8, Keypair> = HashMap::new();
     let tx_clone = tx.clone();
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
     for kind in 0..MAX_MINERS {
         let keypair_path_norm = if keypair_path.ends_with("/")
         { keypair_path.clone() } else { keypair_path.clone() + "/" };
         let keypair_fn = format!("{keypair_path_norm}id{kind}.json");
+
         let _ = match read_keypair_file(&keypair_fn) {
             Ok(keypair) => {
                 wallets.insert(kind, keypair.insecure_clone());
                 let a = ethereum_address.clone();
                 let txc = tx_clone.clone();
-                let tt = tippers.clone();
                 let keypair_clone = keypair.insecure_clone();
-                let _h = thread::spawn(move || {
+                rt.spawn(
                     do_mine(
                         keypair,
                         MineParams {
@@ -229,10 +260,10 @@ async fn main() {
                             delay,
                             units,
                             jito_tip,
-                            tippers: tt
+                            tippers: tippers.clone(),
                         },
                         txc)
-                });
+                );
                 // h.join().unwrap();
                 if automint > 0 {
                     let tx_clone1 = tx.clone();
@@ -252,9 +283,9 @@ async fn main() {
                                                 slot: slot.slot,
                                                 priority_fee,
                                                 kind,
-                                                automint
+                                                automint,
                                             },
-                                            txcm
+                                            txcm,
                                         )
                                     }
                                 }
@@ -263,7 +294,7 @@ async fn main() {
                         };
                     });
                 }
-            },
+            }
             _ => ()
         };
     }
@@ -324,25 +355,24 @@ fn get_token_record(client: &RpcClient, pda: &Pubkey) -> Option<UserTokensRecord
 }
 
 // Earn (mine) points by looking for hash patterns in randomized numbers
-fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
+async fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
     let (
         ethereum_address,
         address,
         priority_fee,
         runs,
         kind,
-        delay,
+        _delay,
         units,
-        jito_tip,
-        tippers,
+        _jito_tip,
+        _tippers
     ) = params.into();
-    let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
-    let jito_url = if jito_tip.is_some() {
-        std::env::var("JITO_PROVIDER_URL").map(|u| Some(format!("{}/transactions", u)))
-            .expect("JITO_PROVIDER_URL must be set with 'jito_tip' param.")
-    } else { None };
-    
-    let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
+    let url = std::env::var("ANCHOR_PROVIDER_URL")
+        .expect("ANCHOR_PROVIDER_URL must be set.");
+    let ws_url_ = str::replace(url.as_str(), "http", "ws");
+    let ws_url = str::replace(ws_url_.as_str(), "8899", "8900");
+
+    let miners_program_ids_str = std::env::var("MINERS").unwrap_or(String::from(MINERS));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), MAX_MINERS as usize, "Bad miners set");
 
@@ -350,12 +380,8 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
 
     tx.send(format!("{Y}[{}]{U} Miner Program ID={}", kind.to_string(), program_id.to_string().green())).unwrap();
 
-    let client = RpcClient::new(url.clone());
-    let rpc_client = if jito_tip.is_some() {
-        RpcClient::new(jito_url.unwrap())
-    } else {
-        RpcClient::new(url.clone())
-    };
+    let legacy_client = RpcClient::new(url.clone());
+    let non_blocking_client = NonblockingRpcClient::new(url.clone());
 
     tx.send(format!(
         "{Y}[{}]{U} Using user wallet={}, account={}",
@@ -366,7 +392,7 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
 
     let (global_xn_record_pda, _global_bump) = Pubkey::find_program_address(
         &[b"xn-miner-global", kind.to_be_bytes().as_slice()],
-        &program_id
+        &program_id,
     );
     // tx.send(format!("Global XN PDA: {}", global_xn_record_pda.to_string().green())).unwrap();
 
@@ -377,7 +403,7 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
             kind.to_be_bytes().as_slice(),
             program_id.as_ref()
         ],
-        &program_id
+        &program_id,
     );
     // tx.send(format!("User Eth PDA: {}", user_eth_xn_record_pda.to_string().green())).unwrap();
 
@@ -388,87 +414,113 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
             kind.to_be_bytes().as_slice(),
             program_id.as_ref()
         ],
-        &program_id
+        &program_id,
     );
     // tx.send(format!("User Sol PDA: {}", user_sol_xn_record_pda.to_string().green())).unwrap();
 
     let method_name_data = "global:mine_hashes";
     let digest = hash(method_name_data.as_bytes());
-    let ix_data  = &digest.to_bytes()[0..8];
+    let ix_data = &digest.to_bytes()[0..8];
+    let blockhash = non_blocking_client.get_latest_blockhash().await.expect("No blockhash");
+    let compute_budget_instruction_price = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
+    let compute_budget_instruction_limit = ComputeBudgetInstruction::set_compute_unit_limit(units);
+    
+    let tpu_rpc_client = Arc::new(non_blocking_client);
 
-    let mut _run = 0;
-    while runs == 0 || _run < runs  {
-        _run += 1;
-        let address_str = ethereum_address.clone();
+    loop {
+        let messages = (0..runs)
+            .map(|_i| {
+                let address_str = ethereum_address.clone();
+                let mint_hashes = MineHashes {
+                    eth_account: EthAccount {
+                        address,
+                        address_str,
+                    },
+                    _kind: kind,
+                };
+                let mine_instruction = Instruction {
+                    program_id,
+                    data: [ix_data, to_vec(&mint_hashes).unwrap().as_slice()].concat().to_vec(),
+                    accounts: vec![
+                        AccountMeta::new(global_xn_record_pda, false),
+                        AccountMeta::new(user_eth_xn_record_pda, false),
+                        AccountMeta::new(user_sol_xn_record_pda, false),
+                        AccountMeta::new(payer.pubkey(), true),
+                        AccountMeta::new_readonly(system_program::ID, false),
+                    ],
+                };
+                let instructions = vec![
+                    compute_budget_instruction_limit.clone(),
+                    compute_budget_instruction_price.clone(),
+                    mine_instruction,
+                ];
+                Message::new_with_blockhash(
+                    &instructions,
+                    Some(&payer.pubkey()),
+                    &blockhash,
+                )
+            })
+            .collect::<Vec<_>>();
 
-        let mint_hashes = MineHashes {
-            eth_account: EthAccount {
-                address,
-                address_str
-            },
-            _kind: kind
-        };
+        // tx.send(format!("{:?}", messages)).unwrap();
 
-        let compute_budget_instruction_limit = ComputeBudgetInstruction::set_compute_unit_limit(units);
-        let compute_budget_instruction_price = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
-        let tip_jito = if jito_tip.is_some() && tippers.len() > 0 {
-            let tipper = Pubkey::try_from(tippers[0].as_str());
-            Some(system_instruction::transfer(&payer.pubkey(), &tipper.unwrap(), jito_tip.unwrap_or(1)))
-        } else {
-            None
-        };
-        
-        let mine_instruction = Instruction {
-            program_id,
-            data: [ix_data, to_vec(&mint_hashes).unwrap().as_slice()].concat().to_vec(),
-            accounts: vec![
-                AccountMeta::new(global_xn_record_pda, false),
-                AccountMeta::new(user_eth_xn_record_pda, false),
-                AccountMeta::new(user_sol_xn_record_pda, false),
-                AccountMeta::new(payer.pubkey(), true),
-                AccountMeta::new_readonly(system_program::ID, false),
-            ],
-        };
-        
-        let mut instructions = vec![
-            compute_budget_instruction_limit.clone(),
-            mine_instruction,
-        ];
-        if tip_jito.is_some() {
-            instructions.push(tip_jito.clone().unwrap())
-        } else {
-            instructions.push(compute_budget_instruction_price.clone())
-        }
-
-        let transaction = Transaction::new_signed_with_payer(
-            &instructions,
-            Some(&payer.pubkey()),
-            &[&payer],
-            client.get_latest_blockhash().unwrap(),
+        let connection_cache = ConnectionCache::new_quic(
+            "connection_cache_cli_program_quic",
+            10,
         );
 
-        let result = rpc_client.send_transaction(&transaction);
-        match result {
-            Ok(signature) => {
-                let user_state = get_eth_record(&client, &user_eth_xn_record_pda);
-                let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
-                let (h, sh) = user_state.map(|s| (s.hashes.to_string(), s.superhashes.to_string()))
-                    .unwrap_or((String::from("-"), String::from("-")));
-                tx.send(format!(
-                    "{Y}[{}]{U} Tx={}, hashes={}, superhashes={}, points={}, url={}",
-                    kind.to_string(),
-                    signature.to_string().yellow(),
-                    h.yellow(),
-                    sh.yellow(),
-                    user_sol_state.map(|s| (s.points / DECIMALS).to_string())
-                        .unwrap_or(String::from("-")).yellow(),
-                    rpc_client.url()
-                )).unwrap();
-                thread::sleep(Duration::from_secs_f32(delay));
-                            
-            },
-            Err(err) => tx.send(format!("Failed: {:?}", err)).unwrap(),
+        let transaction_errors = if let ConnectionCache::Quic(cache) = connection_cache {
+            let tpu_client = TpuClient::new_with_connection_cache(
+                tpu_rpc_client.clone(),
+                ws_url.as_str(),
+                TpuClientConfig::default(),
+                cache,
+            ).await.unwrap();
+            
+            send_and_confirm_transactions_in_parallel(
+                tpu_rpc_client.clone(),
+                Some(tpu_client),
+                &messages,
+                &[&payer],
+                SendAndConfirmConfig {
+                    resign_txs_count: Some(5),
+                    with_spinner: true,
+                },
+            ).await
+                .map_err(|err| {
+                    tx.send(format!("Data writes to account failed: {err}")).unwrap();
+                    err
+                })
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+            
+        } else {
+            vec![]
         };
+
+        let oks = transaction_errors.iter()
+            .filter(|e| (**e).is_none())
+            .count();
+        let errs = transaction_errors.iter()
+            .filter(|e| (**e).is_some())
+            .count();
+
+        let user_state = get_eth_record(&legacy_client, &user_eth_xn_record_pda);
+        let user_sol_state = get_sol_record(&legacy_client, &user_sol_xn_record_pda);
+
+        let (h, sh) = user_state.map(|s| (s.hashes.to_string(), s.superhashes.to_string()))
+            .unwrap_or((String::from("-"), String::from("-")));
+        tx.send(format!(
+            "{Y}[{}]{U} Txs: {} Errors: {} Hashes={}, Superhashes={}, Points={}",
+            kind.to_string(),
+            oks.to_string().yellow(),
+            errs.to_string().yellow(),
+            h.yellow(),
+            sh.yellow(),
+            user_sol_state.map(|s| (s.points / DECIMALS).to_string())
+                .unwrap_or(String::from("-")).yellow(),
+        )).unwrap();
     }
 }
 
@@ -480,7 +532,7 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
     let program_id_minter_str = std::env::var("PROGRAM_ID_MINTER").unwrap_or(String::from(MINTER));
     let program_id_minter = Pubkey::try_from(program_id_minter_str.as_str()).expect("Bad program ID");
 
-    let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
+    let miners_program_ids_str = std::env::var("MINERS").unwrap_or(String::from(MINERS));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), MAX_MINERS as usize, "Bad miners set");
 
@@ -504,7 +556,7 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
             kind.to_be_bytes().as_slice(),
             &program_id_miner.to_bytes()
         ],
-        &program_id_miner
+        &program_id_miner,
     );
     // println!("User record PDA={} bump={}", user_sol_xn_record_pda.to_string().green(), _user_bump.to_string());
 
@@ -513,13 +565,13 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
             b"sol-xen-minted",
             &payer.pubkey().to_bytes(),
         ],
-        &program_id_minter
+        &program_id_minter,
     );
     // println!("User token record PDA={} bump={}", user_token_record_pda.to_string().green(), _user_rec_bump.to_string());
 
     let (mint_pda, _mint_bump) = Pubkey::find_program_address(
         &[b"mint"],
-        &program_id_minter
+        &program_id_minter,
     );
     // println!("Mint PDA={}", mint_pda.to_string().green());
 
@@ -528,7 +580,7 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
     let user_token_account = get_associated_token_address_with_program_id(
         &payer.pubkey(),
         &mint_pda,
-        &spl_token::ID
+        &spl_token::ID,
     );
 
     let method_name_data = "global:mint_tokens";
@@ -550,15 +602,15 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
             AccountMeta::new_readonly(spl_token::ID, false),
             AccountMeta::new_readonly(system_program::ID, false),
             AccountMeta::new_readonly(associate_token_program, false),
-            AccountMeta::new_readonly(program_id_miner, false)
-        ]
+            AccountMeta::new_readonly(program_id_miner, false),
+        ],
     };
 
     // get pre-tx user balance
     let user_token_state_pre = get_token_record(&client, &user_token_record_pda);
-    
+
     let compute_budget_instruction_price = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
-    
+
     let transaction = Transaction::new_signed_with_payer(
         &[
             // compute_budget_instruction_limit,
@@ -599,13 +651,11 @@ fn do_mint(payer: Keypair, params: MintParams, tx: mpsc::Sender<String>) {
                     .unwrap_or(String::from("")).green(),
                 delta_str.yellow(),
             )).unwrap()
-            
-        },
+        }
         Err(_err) => tx.send(format!(
             "{R}[{}]{U} Unable to confirm Mint tx due to timeout",
             kind.to_string()
         )).unwrap(),
     };
-
 }
 
