@@ -21,6 +21,12 @@ use solana_sdk::signature::Keypair;
 use jsonrpsee::core::client::{ClientT};
 use jsonrpsee::rpc_params;
 use jsonrpsee::http_client::{HttpClient, HttpClientBuilder};
+use bincode::{serialize};
+use base58::ToBase58;
+use jsonrpsee::core::traits::ToRpcParams;
+use spl_memo::build_memo;
+use serde::{Deserialize, Serialize};
+use futures::channel::oneshot;
 
 const MINERS: &str = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
 
@@ -124,6 +130,31 @@ pub struct MineParams {
     units: u32,
     jito_tip: Option<u64>,
     tippers: Vec<String>,
+}
+
+
+#[derive(Serialize,Deserialize, Debug, Clone)]
+pub struct JitoContext {
+    slot: u64
+}
+
+#[derive(Serialize,Deserialize, Debug, Clone)]
+pub struct JitoErr {
+    ok: Option<String>
+}
+
+#[derive(Serialize,Deserialize, Debug, Clone)]
+pub struct JitoValue {
+    bundle_id: String,
+    transactions: Vec<String>,
+    slot: u64,
+    confirmation_status: String,
+    err: JitoErr
+}
+#[derive(Serialize,Deserialize, Debug, Clone)]
+pub struct JitoBundleStatus {
+    context: JitoContext,
+    value: Option<Vec<JitoValue>>,
 }
 
 impl From<MineParams> for (String, [u8; 20], u64, u32, u8, f32, u32, Option<u64>, Vec<String>) {
@@ -323,8 +354,31 @@ fn get_token_record(client: &RpcClient, pda: &Pubkey) -> Option<UserTokensRecord
     }
 }
 
+
+async fn wait_for_status(sig: String, jito_client: HttpClient) -> oneshot::Receiver<JitoBundleStatus> {
+    let params1 = rpc_params![[sig]];
+    let (sender, receiver) = oneshot::channel();
+    async {
+        loop {
+            let r: Result<JitoBundleStatus, _> = jito_client.request("getBundleStatuses", params1.clone()).await;
+            if r.is_ok() {
+                let res = r.unwrap();
+                if res.value.is_some() {
+                    if res.clone().value.unwrap().len() > 0 {
+                        sender.send(res).unwrap();
+                        return;
+                    }
+                }
+            }
+            thread::sleep(Duration::from_millis(1_000));
+        }
+    }.await;
+    receiver
+}
+
 // Earn (mine) points by looking for hash patterns in randomized numbers
-fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
+#[tokio::main]
+async fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
     let (
         ethereum_address,
         address,
@@ -337,11 +391,15 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
         tippers,
     ) = params.into();
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
-    let jito_url = if jito_tip.is_some() {
+    let _jito_url = if jito_tip.is_some() {
         std::env::var("JITO_PROVIDER_URL").map(|u| Some(format!("{}/transactions", u)))
             .expect("JITO_PROVIDER_URL must be set with 'jito_tip' param.")
     } else { None };
-    
+    let jito_bundles_url = if jito_tip.is_some() {
+        std::env::var("JITO_PROVIDER_URL").map(|u| Some(format!("{}/bundles", u)))
+            .expect("JITO_PROVIDER_URL must be set with 'jito_tip' param.")
+    } else { None };
+
     let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
     assert_eq!(miners.len(), MAX_MINERS as usize, "Bad miners set");
@@ -351,11 +409,7 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
     tx.send(format!("{Y}[{}]{U} Miner Program ID={}", kind.to_string(), program_id.to_string().green())).unwrap();
 
     let client = RpcClient::new(url.clone());
-    let rpc_client = if jito_tip.is_some() {
-        RpcClient::new(jito_url.unwrap())
-    } else {
-        RpcClient::new(url.clone())
-    };
+    let rpc_client = RpcClient::new(url.clone());
 
     tx.send(format!(
         "{Y}[{}]{U} Using user wallet={}, account={}",
@@ -411,13 +465,7 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
 
         let compute_budget_instruction_limit = ComputeBudgetInstruction::set_compute_unit_limit(units);
         let compute_budget_instruction_price = ComputeBudgetInstruction::set_compute_unit_price(priority_fee);
-        let tip_jito = if jito_tip.is_some() && tippers.len() > 0 {
-            let tipper = Pubkey::try_from(tippers[0].as_str());
-            Some(system_instruction::transfer(&payer.pubkey(), &tipper.unwrap(), jito_tip.unwrap_or(1)))
-        } else {
-            None
-        };
-        
+
         let mine_instruction = Instruction {
             program_id,
             data: [ix_data, to_vec(&mint_hashes).unwrap().as_slice()].concat().to_vec(),
@@ -429,46 +477,93 @@ fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
                 AccountMeta::new_readonly(system_program::ID, false),
             ],
         };
-        
-        let mut instructions = vec![
-            compute_budget_instruction_limit.clone(),
-            mine_instruction,
-        ];
-        if tip_jito.is_some() {
-            instructions.push(tip_jito.clone().unwrap())
+
+        if jito_tip.is_some() && tippers.len() > 0 {
+            let jito_client: HttpClient = HttpClientBuilder::default().build(jito_bundles_url.clone().unwrap()).expect("Error");
+
+            let tip_jito = system_instruction::transfer(
+                    &payer.pubkey(),
+                    &Pubkey::try_from(tippers[0].to_string().as_str()).unwrap(),
+                    jito_tip.map(|t|t).unwrap_or(1)
+                );
+
+            let transactions = (0..5).map(|i| {
+                let memo = build_memo(&[i as u8], &[&payer.pubkey()]);
+                let mut instructions = vec![
+                    compute_budget_instruction_limit.clone(),
+                    compute_budget_instruction_price.clone(),
+                    memo,
+                    mine_instruction.clone(),
+                ];
+                if i == 4 {
+                    instructions.push(tip_jito.clone())
+                }
+                let transaction = Transaction::new_signed_with_payer(
+                    &instructions,
+                    Some(&payer.pubkey()),
+                    &[&payer],
+                    client.get_latest_blockhash().unwrap(),
+                );
+                serialize(&transaction).unwrap().to_base58()
+            }).collect::<Vec<String>>();
+
+            let params = rpc_params![transactions];
+            
+            let resp: Result<String, _> = jito_client.request("sendBundle", params).await;
+            if resp.is_ok() {
+                let sig = resp.expect("err");
+                tx.send(format!("{Y}[{}]{U} Bundle ID: {}", kind, sig)).unwrap();
+
+                let status = wait_for_status(sig, jito_client).await;
+                let result = status.await;
+                if result.is_ok() {
+                    tx.send(format!(
+                        "{Y}[{}]{U} Txs: {:?}",
+                        kind,
+                        result.unwrap().value.map(|v| v[0].transactions.clone()).unwrap()
+                    )).unwrap();
+                } else {
+                    tx.send(format!("{Y}[{}]{U} Error", kind)).unwrap();
+                }
+            } else {
+                tx.send(format!("{Y}[{}]{U} Error; moving along", kind)).unwrap();
+            }
+
         } else {
-            instructions.push(compute_budget_instruction_price.clone())
+            let instructions = vec![
+                compute_budget_instruction_limit.clone(),
+                compute_budget_instruction_price.clone(),
+                mine_instruction.clone(),
+            ];
+            let transaction = Transaction::new_signed_with_payer(
+                &instructions,
+                Some(&payer.pubkey()),
+                &[&payer],
+                client.get_latest_blockhash().unwrap(),
+            );
+
+            let result = rpc_client.send_transaction(&transaction);
+            match result {
+                Ok(signature) => {
+                    let user_state = get_eth_record(&client, &user_eth_xn_record_pda);
+                    let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
+                    let (h, sh) = user_state.map(|s| (s.hashes.to_string(), s.superhashes.to_string()))
+                        .unwrap_or((String::from("-"), String::from("-")));
+                    tx.send(format!(
+                        "{Y}[{}]{U} Tx={}, hashes={}, superhashes={}, points={}, url={}",
+                        kind.to_string(),
+                        signature.to_string().yellow(),
+                        h.yellow(),
+                        sh.yellow(),
+                        user_sol_state.map(|s| (s.points / DECIMALS).to_string())
+                            .unwrap_or(String::from("-")).yellow(),
+                        rpc_client.url()
+                    )).unwrap();
+                    thread::sleep(Duration::from_secs_f32(delay));
+                },
+                Err(err) => tx.send(format!("Failed: {:?}", err)).unwrap(),
+            };
         }
-
-        let transaction = Transaction::new_signed_with_payer(
-            &instructions,
-            Some(&payer.pubkey()),
-            &[&payer],
-            client.get_latest_blockhash().unwrap(),
-        );
-
-        let result = rpc_client.send_transaction(&transaction);
-        match result {
-            Ok(signature) => {
-                let user_state = get_eth_record(&client, &user_eth_xn_record_pda);
-                let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
-                let (h, sh) = user_state.map(|s| (s.hashes.to_string(), s.superhashes.to_string()))
-                    .unwrap_or((String::from("-"), String::from("-")));
-                tx.send(format!(
-                    "{Y}[{}]{U} Tx={}, hashes={}, superhashes={}, points={}, url={}",
-                    kind.to_string(),
-                    signature.to_string().yellow(),
-                    h.yellow(),
-                    sh.yellow(),
-                    user_sol_state.map(|s| (s.points / DECIMALS).to_string())
-                        .unwrap_or(String::from("-")).yellow(),
-                    rpc_client.url()
-                )).unwrap();
-                thread::sleep(Duration::from_secs_f32(delay));
-                            
-            },
-            Err(err) => tx.send(format!("Failed: {:?}", err)).unwrap(),
-        };
     }
 }
 
