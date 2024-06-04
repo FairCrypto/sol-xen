@@ -2,7 +2,48 @@
 
 ## Installation
 
-### Clone the repo
+### From Binaries
+
+Download the package for your OS. Extract and run.
+https://github.com/FairCrypto/sol-xen/releases/latest
+
+> MacOS
+```shell
+# Download
+wget https://github.com/faircrypto/sol-xen/releases/latest/download/sol-xen-macos-universal.tar.gz
+
+# Extract
+tar xf sol-xen-macos-universal.tar.gz
+
+# Run the miner
+./sol-xen-macos-universal/sol-xen-multiminer --help
+```
+
+> Linux (x86_64)
+```
+# Download
+wget https://github.com/faircrypto/sol-xen/releases/latest/download/sol-xen-linux-x86_64.tar.gz
+
+# Extract
+tar xf sol-xen-linux-x86_64.tar.gz
+
+# Run the miner
+./sol-xen-linux-x86_64/sol-xen-multiminer --help
+```
+
+> Linux (arm64)
+```shell
+# Download
+wget https://github.com/faircrypto/sol-xen/releases/latest/download/sol-xen-linux-arm64.tar.gz
+
+# Extract
+tar xf sol-xen-linux-arm64.tar.gz
+
+# Run the miner
+./sol-xen-linux-arm64/sol-xen-multiminer --help
+```
+
+### From Source
 
 ```
 git clone https://github.com/FairCrypto/sol-xen.git
