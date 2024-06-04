@@ -87,7 +87,7 @@ struct Args {
     kind: u8,
     #[arg(short, long, default_value_t = 1)]
     fee: u64,
-    #[arg(short, long, default_value_t = 1_400_000)]
+    #[arg(short, long, default_value_t = 1_180_000)]
     units: u32,
     #[arg(short, long, default_value_t = 1)]
     runs: u32,

@@ -22,7 +22,7 @@ async function main() {
     let cmd;
     let address = '';
     let priorityFee = 1;
-    let units = 1_200_000;
+    let units = 1_180_000;
     let runs = 1;
     let kind;
     let delay = 1;
