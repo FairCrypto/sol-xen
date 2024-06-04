@@ -20,7 +20,7 @@ tar xf sol-xen-macos-universal.tar.gz
 ```
 
 > Linux (x86_64)
-```
+```shell
 # Download
 wget https://github.com/faircrypto/sol-xen/releases/latest/download/sol-xen-linux-x86_64.tar.gz
 
