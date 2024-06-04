@@ -23,7 +23,6 @@ use jsonrpsee::rpc_params;
 use jsonrpsee::http_client::{HttpClient, HttpClientBuilder};
 use bincode::{serialize};
 use base58::ToBase58;
-use jsonrpsee::core::traits::ToRpcParams;
 use spl_memo::build_memo;
 use serde::{Deserialize, Serialize};
 use futures::channel::oneshot;
@@ -232,7 +231,7 @@ async fn main() {
     } else {
         vec!()
     };
-    println!("{:?}", tippers);
+    println!("Tippers: {:}", tippers.len());
     
     let (tx, rx) = mpsc::channel::<String>();
     let mut wallets: HashMap<u8, Keypair> = HashMap::new();
