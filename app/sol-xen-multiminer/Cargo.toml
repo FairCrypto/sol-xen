@@ -26,3 +26,4 @@ base58 = "0.2.0"
 spl-memo = {  version = "3.0.1" , features = ["no-entrypoint"] }
 serde = { version = "1.0.202", features = ["derive"] }
 futures = "0.3.30"
+url = "2.5.0"

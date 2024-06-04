@@ -26,6 +26,7 @@ use base58::ToBase58;
 use spl_memo::build_memo;
 use serde::{Deserialize, Serialize};
 use futures::channel::oneshot;
+use url::{Url, Host};
 
 const MINERS: &str = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
 
@@ -274,7 +275,7 @@ async fn main() {
                                 for slot in subs.1 {
                                     let txcm = tx_clone1.clone();
                                     let kpm = keypair_clone.insecure_clone();
-                                    if slot.slot.sub(last_slot).ge(&(automint as u64)) {
+                                    if slot.slot.ge(&last_slot) && slot.slot.sub(last_slot).ge(&(automint as u64)) {
                                         last_slot = slot.slot;
                                         do_mint(
                                             kpm,
@@ -390,14 +391,17 @@ async fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
         tippers,
     ) = params.into();
     let url = std::env::var("ANCHOR_PROVIDER_URL").expect("ANCHOR_PROVIDER_URL must be set.");
-    let _jito_url = if jito_tip.is_some() {
-        std::env::var("JITO_PROVIDER_URL").map(|u| Some(format!("{}/transactions", u)))
+    let jito_base_url = if jito_tip.is_some() {
+        std::env::var("JITO_PROVIDER_URL")
+            .map(|u| Url::parse(u.as_str()))
             .expect("JITO_PROVIDER_URL must be set with 'jito_tip' param.")
+            .map(|url| url.origin())
+            .map(|origin| origin.ascii_serialization())
+            .map(|u| Some(format!("{}/api/v1", u)))
+            .unwrap()
     } else { None };
-    let jito_bundles_url = if jito_tip.is_some() {
-        std::env::var("JITO_PROVIDER_URL").map(|u| Some(format!("{}/bundles", u)))
-            .expect("JITO_PROVIDER_URL must be set with 'jito_tip' param.")
-    } else { None };
+    let jito_bundles_url = jito_base_url
+            .map(|u|format!("{}/bundles", u));
 
     let miners_program_ids_str= std::env::var("MINERS").unwrap_or(String::from(MINERS));
     let miners = miners_program_ids_str.split(',').collect::<Vec<&str>>();
@@ -478,6 +482,8 @@ async fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
         };
 
         if jito_tip.is_some() && tippers.len() > 0 {
+            // tx.send(format!("{Y}[{}]{U} Using Jito URL={}", kind.to_string(), jito_bundles_url.clone().unwrap().green())).unwrap();
+
             let jito_client: HttpClient = HttpClientBuilder::default().build(jito_bundles_url.clone().unwrap()).expect("Error");
 
             let tip_jito = system_instruction::transfer(
@@ -511,21 +517,34 @@ async fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
             let resp: Result<String, _> = jito_client.request("sendBundle", params).await;
             if resp.is_ok() {
                 let sig = resp.expect("err");
-                tx.send(format!("{Y}[{}]{U} Bundle ID: {}", kind, sig)).unwrap();
+                tx.send(format!("{Y}[{}]{U} Bundle ID={}", kind, sig.yellow())).unwrap();
 
                 let status = wait_for_status(sig, jito_client).await;
                 let result = status.await;
                 if result.is_ok() {
+                    result.unwrap().value.map(|v| v[0].transactions.clone()).unwrap()
+                        .iter()
+                        .for_each(|hash|tx.send(format!("{Y}[{}]{U}   Tx={}", kind, hash.yellow())).unwrap());
+                    
+                    let user_state = get_eth_record(&client, &user_eth_xn_record_pda);
+                    let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
+                    let (h, sh) = user_state
+                        .map(|s| (s.hashes.to_string(), s.superhashes.to_string()))
+                        .unwrap_or((String::from("-"), String::from("-")));
                     tx.send(format!(
-                        "{Y}[{}]{U} Txs: {:?}",
-                        kind,
-                        result.unwrap().value.map(|v| v[0].transactions.clone()).unwrap()
+                        "{Y}[{}]{U} Hashes={}, Superhashes={}, Points={}",
+                        kind.to_string(),
+                        h.yellow(),
+                        sh.yellow(),
+                        user_sol_state
+                            .map(|s| (s.points / DECIMALS).to_string())
+                            .unwrap_or(String::from("-")).yellow(),
                     )).unwrap();
                 } else {
-                    tx.send(format!("{Y}[{}]{U} Error", kind)).unwrap();
+                    tx.send(format!("{Y}[{}]{U} Error in bundle processing; skipping...", kind)).unwrap();
                 }
             } else {
-                tx.send(format!("{Y}[{}]{U} Error; moving along", kind)).unwrap();
+                tx.send(format!("{Y}[{}]{U} Error sending bundle; skipping...", kind)).unwrap();
             }
 
         } else {

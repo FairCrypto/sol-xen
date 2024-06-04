@@ -3637,6 +3637,7 @@ dependencies = [
  "spl-memo 3.0.1",
  "spl-token",
  "tokio",
+ "url",
 ]
 
 [[package]]
