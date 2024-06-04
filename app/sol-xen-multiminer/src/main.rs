@@ -26,7 +26,7 @@ use base58::ToBase58;
 use spl_memo::build_memo;
 use serde::{Deserialize, Serialize};
 use futures::channel::oneshot;
-use url::{Url, Host};
+use url::{Url};
 
 const MINERS: &str = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
 
