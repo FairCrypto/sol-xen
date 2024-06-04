@@ -63,4 +63,3 @@ jobs:
           # (required) GitHub token for uploading assets to GitHub Releases.
           token: ${{ secrets.GITHUB_TOKEN }}
           leading-dir: true
-          bin-leading-dir: sol-xen
