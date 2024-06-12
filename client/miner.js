@@ -4,9 +4,10 @@ import { hideBin } from 'yargs/helpers';
 import { getAddress, isAddress } from 'viem';
 import readline from 'readline';
 import { ComputeBudgetProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { AnchorProvider, setProvider, web3, Wallet, workspace, } from '@coral-xyz/anchor';
+import { AnchorProvider, setProvider, web3, workspace, } from '@coral-xyz/anchor';
 import * as fs from "node:fs";
 import path from "node:path";
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 dotenv.config();
 var Cmd;
 (function (Cmd) {
@@ -140,7 +141,7 @@ async function main() {
         process.exit(1);
     }
     // Update this to the ID of your deployed program
-    const wallet = new Wallet(user);
+    const wallet = new NodeWallet(user);
     // Create and set the provider
     const anchorOptions = {
         // ...AnchorProvider.defaultOptions(),

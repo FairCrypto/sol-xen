@@ -9,9 +9,9 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m");
+declare_id!("GehkN2WJBaXvXiTifd7TjoXkjsSPsWdGFSAspki2mRCq");
 
-const START_SLOT: u64 = 1;
+const START_SLOT: u64 = 0;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -21,7 +21,7 @@ pub mod sol_xen_minter {
     use super::*;
 
     pub fn create_mint(ctx: Context<InitTokenMint>, metadata: InitTokenParams) -> Result<()> {
-        
+        /*
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint_account]];
         let signer = [&seeds[..]];
 
@@ -56,7 +56,7 @@ pub mod sol_xen_minter {
             true,
             None,
         )?;
-        
+        */
         Ok(())
     }
 
@@ -95,7 +95,7 @@ pub mod sol_xen_minter {
         
         require!(kind < 4, SolXenError::BadParam);
 
-        let comma_delimited = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
+        let comma_delimited = "69zNTfcY19Uqn76GjJnMddbZfo4MomLJTjnm5Q1f1TLZ,B2L3bs9duWLK8SpPxNtsXEswfmd4c6JJhHqHbExiomiu,Gz8qvvHqpeZNLKnJyp4GjCV4P3D2DGehecMioitt197d,B4FWy5PnadkjLGzkRNNeAmiCg2yMt7nTkCCLtiuWpDZN";
 
         let miners: Vec<Pubkey> = comma_delimited
             .split(',')
@@ -174,10 +174,10 @@ pub struct InitTokenMint<'info> {
     )]
     pub mint_account: Box<Account<'info, Mint>>,
     /// CHECK: Address validated using constraint
-    #[account(mut)]
-    pub metadata: UncheckedAccount<'info>,
+    // #[account(mut)]
+    // pub metadata: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
-    pub token_metadata_program: Program<'info, Metadata>,
+    // pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }

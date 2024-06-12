@@ -188,7 +188,7 @@ async function main() {
         }
     }
 
-    const minersStr = process.env.MINERS || 'B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S';
+    const minersStr = process.env.MINERS || '69zNTfcY19Uqn76GjJnMddbZfo4MomLJTjnm5Q1f1TLZ,B2L3bs9duWLK8SpPxNtsXEswfmd4c6JJhHqHbExiomiu,Gz8qvvHqpeZNLKnJyp4GjCV4P3D2DGehecMioitt197d,B4FWy5PnadkjLGzkRNNeAmiCg2yMt7nTkCCLtiuWpDZN';
 
     const miners = minersStr.split(',').map(s => new web3.PublicKey(s));
 

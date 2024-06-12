@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/sol_xen_minter.json`.
  */
 export type SolXenMinter = {
-  "address": "5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m",
+  "address": "GehkN2WJBaXvXiTifd7TjoXkjsSPsWdGFSAspki2mRCq",
   "metadata": {
     "name": "solXenMinter",
     "version": "0.1.0-epsilon",
@@ -49,16 +49,8 @@ export type SolXenMinter = {
           }
         },
         {
-          "name": "metadata",
-          "writable": true
-        },
-        {
           "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "tokenMetadataProgram",
-          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
         {
           "name": "systemProgram",

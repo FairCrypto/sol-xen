@@ -1,5 +1,5 @@
 {
-  "address": "5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m",
+  "address": "GehkN2WJBaXvXiTifd7TjoXkjsSPsWdGFSAspki2mRCq",
   "metadata": {
     "name": "sol_xen_minter",
     "version": "0.1.0-epsilon",
@@ -43,16 +43,8 @@
           }
         },
         {
-          "name": "metadata",
-          "writable": true
-        },
-        {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "token_metadata_program",
-          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         },
         {
           "name": "system_program",

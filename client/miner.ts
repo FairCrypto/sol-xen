@@ -13,6 +13,7 @@ import {SolXenMiner as TMiner0} from '../target/types/sol_xen_miner_0';
 import {SolXenMiner as TMiner1} from '../target/types/sol_xen_miner_1';
 import {SolXenMiner as TMiner2} from '../target/types/sol_xen_miner_2';
 import {SolXenMiner as TMiner3} from '../target/types/sol_xen_miner_3';
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
 dotenv.config();
 
@@ -161,7 +162,7 @@ async function main() {
     }
 
     // Update this to the ID of your deployed program
-    const wallet = new Wallet(user);
+    const wallet = new NodeWallet(user);
 
     // Create and set the provider
     const anchorOptions = {
