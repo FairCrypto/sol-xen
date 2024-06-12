@@ -1,0 +1,25 @@
+[package]
+name = "sol-xen-tgvminer"
+version = "0.1.0"
+description = "solXEN Rust TGVMiner"
+edition = "2021"
+
+[[bin]]
+name = "sol-xen-tgvminer"
+path = "src/main.rs"
+
+[dependencies]
+borsh = "1.5.0"
+clap = { version = "4.5.4", features = ["derive"] }
+colored = "2.1.0"
+dotenv = "0.15.0"
+ethaddr = "0.2.2"
+hex = "0.4.3"
+solana-client = "1.18.12"
+solana-sdk = "1.18.12"
+spl-associated-token-account = "3.0.2"
+spl-token = "4.0.0"
+solana-rpc-client = "1.18.12"
+tokio = { version = "1.37.0", features = ["macros", "rt", "rt-multi-thread"] }
+jsonrpsee = { version = "0.22.5", features = ["http-client", "macros"] }
+

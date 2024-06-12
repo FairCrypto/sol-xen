@@ -86,7 +86,7 @@ async function main() {
     let cmd: Cmd;
     let address: `0x${string}` = zeroAddress;
     let priorityFee: number = 1;
-    let units: number = 1_200_000;
+    let units: number = 1_180_000;
     let runs: number | null = null;
     let kind: number | null = null;
     let delay: number = 1;

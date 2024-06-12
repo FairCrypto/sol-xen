@@ -32,7 +32,7 @@ async function main() {
     let cmd: Cmd;
     let address: string = '';
     let priorityFee: number = 1;
-    let units: number = 1_200_000;
+    let units: number = 1_180_000;
     let runs: number = 1;
     let kind: number;
     let delay: number = 1;

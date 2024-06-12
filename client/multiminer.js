@@ -48,7 +48,7 @@ async function main() {
     let cmd;
     let address = zeroAddress;
     let priorityFee = 1;
-    let units = 1_200_000;
+    let units = 1_180_000;
     let runs = null;
     let kind = null;
     let delay = 1;
