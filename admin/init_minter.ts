@@ -62,8 +62,8 @@ async function main() {
     const metadata = {
         name: "solXEN",
         symbol: "solXEN",
-        uri: "https://raw.githubusercontent.com/FairCrypto/sol-xen/master/images/solXEN.png",
-        decimals: 9,
+        uri: 'https://solxen.io/metadata.json',
+        decimals: 6,
     }
 
     const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({

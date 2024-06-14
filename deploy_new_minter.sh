@@ -49,7 +49,7 @@ gsed -i 's/comma_delimited = "\(.*\)";/comma_delimited = "'$miners'";/' ./progra
 rm ./target/deploy/sol_xen_minter.so
 rm ./target/deploy/sol_xen_minter-keypair.json
 
-anchor build -p sol-xen-miner
+anchor build -p sol-xen-minter
 minter_key=$(anchor keys list | grep "sol_xen_minter" | awk -F': ' '{print $2}')
 
 echo "   minter key= $minter_key"
