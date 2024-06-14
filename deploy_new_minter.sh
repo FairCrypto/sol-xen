@@ -14,11 +14,11 @@
 # url="https://api.devnet.solana.com"
 
 # mainnet
-url="https://api.mainnet-beta.solana.com"
+# url="https://api.mainnet-beta.solana.com"
 
 # nohup solana-test-validator &
 
-solana config set --url "$url"
+# solana config set --url "$url"
 
 # solana airdrop 100
 
@@ -60,7 +60,8 @@ anchor build -p sol-xen-minter
 
 echo
 echo
-anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1000000 ----max-sign-attempts 1000 --use-rpc
+anchor deploy -p sol-xen-minter -- --with-compute-unit-price 1000000 ----max-sign-attempts 1000 --use-rpc --buffer /Users/lbelyaev/.config/solana/id.json
+# solana program deploy ./target/deploy/sol_xen_minter.so --with-compute-unit-price 1000000 ----max-sign-attempts 1000 --use-rpc
 # anchor deploy -p sol-xen-minter
 
 echo

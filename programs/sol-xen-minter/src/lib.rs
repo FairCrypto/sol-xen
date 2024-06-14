@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m");
+declare_id!("5vxiP8qiCcvMnXmif3ooQhUbERNewHrkGcM4CpLvJhSj");
 
 const START_SLOT: u64 = 1;
 

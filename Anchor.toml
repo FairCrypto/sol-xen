@@ -13,10 +13,11 @@ url = "https://api.apr.dev"
 
 [provider]
 # cluster = "http://69.10.34.226:8899"
-cluster = "https://api.mainnet-beta.solana.com"
+# cluster = "https://api.mainnet-beta.solana.com"
+cluster = "https://little-thrilling-dawn.solana-mainnet.quiknode.pro/f940398c2efdc52fba860b17376cfb182a95c99c/ "
 # cluster = "devnet"
 # cluster = "localnet"
-wallet = "~/.config/solana/id.json"
+wallet = "~/.config/solana/mainnet/id1.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
