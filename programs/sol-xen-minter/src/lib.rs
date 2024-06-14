@@ -9,7 +9,7 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m");
+declare_id!("EPAdVJ5S317jJr2ejgxoA52iptvphGXjPLbqXhZH4n8o");
 
 const START_SLOT: u64 = 1;
 
@@ -146,7 +146,7 @@ pub mod sol_xen_minter {
                     },
                     token_account_seeds
                 ), // using PDA to sign
-                points_to_mint,
+                points_to_mint / 1000,
             )?;
         }
 

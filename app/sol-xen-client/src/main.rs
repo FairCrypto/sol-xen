@@ -24,7 +24,7 @@ use std::time::Duration;
 
 const MINERS: &str = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
 
-const MINTER: &str = "5tungisGgk1fmGXxacNT1NkPtZgRwJnJPVMK5kfHqx2m";
+const MINTER: &str = "EPAdVJ5S317jJr2ejgxoA52iptvphGXjPLbqXhZH4n8o";
 
 #[derive(BorshSerialize, Debug)]
 pub struct EthAccount {
