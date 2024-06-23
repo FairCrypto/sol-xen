@@ -160,6 +160,7 @@ solana config set --url https://api.devnet.solana.com && \
 solana airdrop 1 && \
 git clone https://github.com/FairCrypto/sol-xen.git && \
 cd sol-xen && \
+git checkout delta && \
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
 source ~/.bashrc && \
 nvm install --lts && \
@@ -170,14 +171,15 @@ npm install dotenv && \
 npm install -g dotenv && \
 read -p "Enter your Ethereum address: " ethereum_address && \
 read -p "Enter the number of runs: " num_runs && \
-read -p "Enter the fee: " fee && \
-node ./client/miner.js mine --address "$ethereum_address" -fee "$fee" -r "$num_runs"
+read -p "Enter the fee: " f && \
+node ./client/miner.js mine --address "$ethereum_address" -f "$f" -r "$num_runs"
 ```
 N.B. if there's "Error: airdrop request failed" it means that the faucet is empty. 
 It's necessary to copy the public key and use another faucet (eg. https://faucet.solana.com) and then continue with the installation.
 ```
 git clone https://github.com/FairCrypto/sol-xen.git && \
 cd sol-xen && \
+git checkout delta && \
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
 source ~/.bashrc && \
 nvm install --lts && \
@@ -188,8 +190,8 @@ npm install dotenv && \
 npm install -g dotenv && \
 read -p "Enter your Ethereum address: " ethereum_address && \
 read -p "Enter the number of runs: " num_runs && \
-read -p "Enter the fee: " fee && \
-node ./client/miner.js mine --address "$ethereum_address" -fee "$fee" -r "$num_runs"
+read -p "Enter the fee: " f && \
+node ./client/miner.js mine --address "$ethereum_address" -f "$f" -r "$num_runs"
 ```
 Full options list
 
