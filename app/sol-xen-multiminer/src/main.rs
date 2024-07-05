@@ -577,7 +577,7 @@ async fn do_mine(payer: Keypair, params: MineParams, tx: mpsc::Sender<String>) {
                             .unwrap_or(String::from("-")).yellow(),
                         rpc_client.url()
                     )).unwrap();
-                    thread::sleep(Duration::from_secs_f32(delay));
+                    tokio::time::sleep(Duration::from_secs_f32(delay)).await
                 },
                 Err(err) => tx.send(format!("Failed: {:?}", err)).unwrap(),
             };
