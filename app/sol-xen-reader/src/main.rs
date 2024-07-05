@@ -30,10 +30,8 @@ pub struct EthAccount {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    // #[arg(short, long, default_value_t = String::from("mine"))]
-    // command: String,
-    #[arg(long)]
-    address: String,
+    #[arg(short, long)]
+    address: Option<String>,
     #[arg(short, long)]
     wallet_path: Option<String>,
 }
@@ -95,20 +93,12 @@ fn main() {
     dotenv().ok(); // This line loads the environment variables from the ".env" file.
 
     let args = Args::parse();
-    let ethereum_address: String = args.address;
+    let ethereum_address: Option<String> = args.address;
     let keypair_path = args.wallet_path
         .or(std::env::var("USER_WALLET").ok())
         .expect("Either set USER_WALLET env var, or pass it as -w command line param");
     let payer = read_keypair_file(&keypair_path).expect("Failed to read keypair file");
-
-    // Use ethaddr to parse and validate the Ethereum address with checksum
-    let address = match Address::from_str_checksum(&ethereum_address) {
-        Ok(addr) => addr,
-        Err(_) => {
-            eprintln!("Invalid check-summed Ethereum address: {}", ethereum_address);
-            process::exit(1);
-        }
-    };
+    
 
     let url = std::env::var("ANCHOR_PROVIDER_URL")
         .expect("ANCHOR_PROVIDER_URL must be set.");
@@ -123,36 +113,47 @@ fn main() {
 
     let client = RpcClient::new(url.clone());
 
-    println!(
-        "Running on RPC={}",
-        url.green(),
-    );
+    println!("Running on RPC={}", url.green());
 
-    let (user_eth_xn_record_pda, _user_eth_bump) = Pubkey::find_program_address(
-        &[
-            b"xn-by-eth",
-            &address.as_slice(),
-            kind.to_be_bytes().as_slice(),
-            program_id.as_ref()
-        ],
-        &program_id
-    );
+    match ethereum_address {
+        Some(eth_address) => {
+            // Use ethaddr to parse and validate the Ethereum address with checksum
+            let address = match Address::from_str_checksum(&eth_address) {
+                Ok(addr) => addr,
+                Err(_) => {
+                    eprintln!("Invalid check-summed Ethereum address: {}", eth_address);
+                    process::exit(1);
+                }
+            };
 
-    let (user_sol_xn_record_pda, _user_sol_bump) = Pubkey::find_program_address(
-        &[
-            b"xn-by-sol",
-            &payer.pubkey().to_bytes(),
-            kind.to_be_bytes().as_slice(),
-            program_id.as_ref()
-        ],
-        &program_id
-    );
-
-    let user_eth_state = get_eth_record(&client, &user_eth_xn_record_pda);
-    println!("eth record: {:?}", user_eth_state);
-
-    let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
-    println!("sol record: {:?}", user_sol_state);
-
+            let (user_eth_xn_record_pda, _user_eth_bump) = Pubkey::find_program_address(
+                &[
+                    b"xn-by-eth",
+                    &address.as_slice(),
+                    kind.to_be_bytes().as_slice(),
+                    program_id.as_ref()
+                ],
+                &program_id
+            );
+            
+            let user_eth_state = get_eth_record(&client, &user_eth_xn_record_pda);
+            println!("eth record: {:?}", user_eth_state);
+            
+        }
+        None => {
+            let (user_sol_xn_record_pda, _user_sol_bump) = Pubkey::find_program_address(
+                &[
+                    b"xn-by-sol",
+                    &payer.pubkey().to_bytes(),
+                    kind.to_be_bytes().as_slice(),
+                    program_id.as_ref()
+                ],
+                &program_id
+            );
+            
+            let user_sol_state = get_sol_record(&client, &user_sol_xn_record_pda);
+            println!("sol record: {:?}", user_sol_state);
+        }
+    }
 }
 
