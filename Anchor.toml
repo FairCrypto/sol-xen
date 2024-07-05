@@ -5,6 +5,12 @@ anchor_version = "0.30.0"
 skip-lint = false
 seeds = true
 
+[workspace]
+members = [
+    "programs/*",
+    "app/*"
+]
+
 [programs.devnet]
 # sol_xen_minter = "7Ltcx8X3twQnfYtmCs3C6PTUPhPcZkr1opEoxjFz4xDN"
 
@@ -14,10 +20,12 @@ url = "https://api.apr.dev"
 [provider]
 # cluster = "http://69.10.34.226:8899"
 # cluster = "https://api.mainnet-beta.solana.com"
-cluster = "https://api.mainnet-beta.solana.com"
+# cluster = "https://api.mainnet-beta.solana.com"
+cluster = "https://xolana-devnet.xen.network"
 # cluster = "devnet"
 # cluster = "localnet"
-wallet = "~/.config/solana/id.json"
+# wallet = "~/.config/solana/id.json"
+wallet = "~/.config/solana/mainnet/id1.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

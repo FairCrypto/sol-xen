@@ -11,7 +11,10 @@
 # url="https://api.devnet.solana.com"
 
 # mainnet
-url="https://api.mainnet-beta.solana.com"
+# url="https://api.mainnet-beta.solana.com"
+
+# xolana
+url="https://xolana-devnet.xen.network"
 
 # nohup solana-test-validator &
 
@@ -26,7 +29,7 @@ current_slot=$(solana slot |   awk  '{print $0}')
 echo "current slot= $current_slot"
 
 # start_slot=$((current_slot+330))
-start_slot=268484759
+start_slot=0
 echo "start slot= $start_slot"
 
 timestamp=$(date +%s)
@@ -68,7 +71,7 @@ do
     # should fail!
     # tsx ./admin/init_miner.ts --kind $kind
 
-    solana program set-upgrade-authority "$key" -u "$url" --final
+    # solana program set-upgrade-authority "$key" -u "$url" --final
 
     miners="$miners$key"
     max_less_1=$((max - 1))
@@ -122,7 +125,7 @@ tsx ./admin/init_minter.ts
 # should fail
 # tsx ./admin/init_minter.ts
 
-solana program set-upgrade-authority "$minter_key" -u "$url" --final
+# solana program set-upgrade-authority "$minter_key" -u "$url" --final
 
 timestamp_end=$(date +%s)
 

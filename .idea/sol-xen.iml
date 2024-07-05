@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/programs/sol-xen-minter/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app/sol-xen-multiminer/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app/sol-xen-tgvminer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/sol-xen-reader/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

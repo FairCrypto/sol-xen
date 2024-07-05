@@ -9,9 +9,9 @@ use anchor_spl::{
 };
 use mpl_token_metadata::{types::DataV2};
 
-declare_id!("EPAdVJ5S317jJr2ejgxoA52iptvphGXjPLbqXhZH4n8o");
+declare_id!("71fY7KdYxue2ZrmMcZz1UCBa7LeeZTz7nqMGbbZmtrft");
 
-const START_SLOT: u64 = 1;
+const START_SLOT: u64 = 0;
 
 // TODO: lock to a specifig admin key
 // const ADMIN_KEY: &str = "somesecretadminkey";
@@ -95,7 +95,7 @@ pub mod sol_xen_minter {
         
         require!(kind < 4, SolXenError::BadParam);
 
-        let comma_delimited = "B8HwMYCk1o7EaJhooM4P43BHSk5M8zZHsTeJixqw7LMN,2Ewuie2KnTvMLwGqKWvEM1S2gUStHzDUfrANdJfu45QJ,5dxcK28nyAJdK9fSFuReRREeKnmAGVRpXPhwkZxAxFtJ,DdVCjv7fsPPm64HnepYy5MBfh2bNfkd84Rawey9rdt5S";
+        let comma_delimited = "9XNNynsVCWvXc29pn1JnX612tHmZn9L5ru3CuzB9yqa4,FsgFkUzBvJoGajtqHUXVhv18UKvHP9kVZm7BVWSEteLR,cNek6f9aNewFVKZv9YRyu3sxPCXx2jkEKYWLc6KnB6f,3Giiqno6EobSBbcaVwMJCuf78Fy6smFJfV2PAaborDaX";
 
         let miners: Vec<Pubkey> = comma_delimited
             .split(',')
